@@ -1,0 +1,11 @@
+pydantic-ai
+crawl4ai
+google-genai
+python-dotenv
+structlog
+rich
+tenacity
+atproto
+stackapi
+PyGithub
+requests
