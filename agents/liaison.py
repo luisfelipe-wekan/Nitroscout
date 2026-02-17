@@ -43,6 +43,6 @@ async def draft_response(platform: str, inquiry: str):
     
     filename = f"{platform}_draft_test.md"
     filepath = drafts_dir / filename
-    filepath.write_text(result.data)
+    filepath.write_text(result.data_str)
     
     return filepath
