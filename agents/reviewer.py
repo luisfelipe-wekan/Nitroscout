@@ -3,6 +3,7 @@ import os
 import time
 import re
 import google.generativeai as genai
+from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Optional
 from rich.console import Console
@@ -27,9 +28,11 @@ def _load_api_keys() -> List[str]:
             keys.append(val)
     return keys
 
+
 class ReviewerAgent:
     """
     Analyzes the JSON findings using a SINGLE batched LLM call with API key rotation.
+    Produces a rich Markdown report with a community insights summary.
     """
 
     # Cheap pre-filter: only posts containing these go to the LLM
@@ -80,10 +83,7 @@ class ReviewerAgent:
         return "NitroStack is a TypeScript framework for building production-ready MCP servers."
 
     def _prefilter(self, data: Dict) -> Dict:
-        """
-        Fast keyword pre-filter to eliminate clearly irrelevant posts.
-        Cuts API token cost significantly before the LLM even sees the data.
-        """
+        """Fast keyword pre-filter before the LLM call."""
         candidates = {}
         for title, info in data.items():
             combined = (title + " " + info.get("post", "")).lower()
@@ -92,15 +92,33 @@ class ReviewerAgent:
         console.print(f"[dim]🔎 Pre-filter: {len(data)} posts → {len(candidates)} candidates for LLM.[/dim]")
         return candidates
 
+    def _call_llm(self, prompt: str) -> Optional[str]:
+        """Calls the LLM with automatic key rotation on 429. Returns raw text or None."""
+        max_retries = len(self._api_keys) * 2
+        attempt = 0
+        while attempt < max_retries:
+            try:
+                if not self.model:
+                    break
+                response = self.model.generate_content(prompt)
+                return response.text.strip()
+            except Exception as e:
+                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                    console.print(f"[yellow]⚠️ Key #{self._current_key_index + 1} exhausted. Rotating...[/yellow]")
+                    if not self._rotate_key():
+                        break
+                    time.sleep(3)
+                    attempt += 1
+                else:
+                    console.print(f"[bold red]❌ LLM error: {str(e)[:120]}[/bold red]")
+                    break
+        return None
+
     def _batch_analyze(self, candidates: Dict, knowledge_context: str) -> List[Dict]:
-        """
-        Sends ALL candidates in a SINGLE API call.
-        Returns a list of scored results.
-        """
+        """Sends ALL candidates in a SINGLE API call. Returns a list of scored results."""
         if not self.model:
             return []
 
-        # Build the numbered list of posts for the prompt
         post_list = []
         titles = list(candidates.keys())
         for i, title in enumerate(titles, 1):
@@ -113,87 +131,125 @@ class ReviewerAgent:
 
         prompt = f"""You are an elite Tech Reviewer for NitroStack, an open-source TypeScript framework for building production-ready MCP (Model Context Protocol) servers.
 
-                YOUR PRODUCT CONTEXT:
-                {knowledge_context[:800]}
+YOUR PRODUCT CONTEXT:
+{knowledge_context[:800]}
 
-                ---
-                POSTS TO ANALYZE ({len(titles)} total):
+---
+POSTS TO ANALYZE ({len(titles)} total):
 
-                {posts_text}
+{posts_text}
 
-                ---
-                TASK:
-                For each post above, determine its relevance and assign a score from 0–10.
+---
+TASK:
+For each post, assign a Relevance Score from 0–10 and write a 1-sentence "Main Idea" analysis.
 
-                HIGH scores (7–10) go to posts where:
-                - Developers are building, choosing, or struggling with MCP servers/agents
-                - New competing tools or MCP frameworks are being discussed
-                - People are asking "how do I" or "what's the best" for AI infrastructure
-                - High-engagement technical threads (many comments) on AI tooling
+HIGH scores (7–10) for posts where:
+- Developers are building, choosing, or struggling with MCP servers/agents
+- New competing tools or MCP frameworks being discussed
+- People asking "how do I" / "what's the best" for AI infrastructure
+- High-engagement threads on AI tooling
 
-                LOW scores (0–4) go to:
-                - Totally unrelated topics (finance, politics, gaming, etc.)
-                - Pure security scanner tools with no MCP/agent angle
-                - Vague lifestyle or business posts
+LOW scores (0–4) for:
+- Totally unrelated topics (finance, politics, gaming)
+- Vague lifestyle/business posts with no technical depth
 
-                OUTPUT: Return ONLY a valid JSON array, no extra text or markdown fences. Example:
-                [
-                {{"index": 1, "score": 8, "analysis": "Developers debating MCP transport layer options — high need for a structured framework."}},
-                {{"index": 2, "score": 3, "analysis": "Security scanner unrelated to AI agent frameworks."}}
-                ]"""
+OUTPUT: Return ONLY a valid JSON array, no markdown fences. Example:
+[
+  {{"index": 1, "score": 8, "analysis": "Developers debating MCP transport choices — high need for a structured framework like NitroStack."}},
+  {{"index": 2, "score": 3, "analysis": "General security scanner with no AI agent angle."}}
+]"""
 
-        max_retries = len(self._api_keys) * 2  # Try each key at most twice
-        attempt = 0
-        while attempt < max_retries:
-            try:
-                if not self.model:
-                    break
-                response = self.model.generate_content(prompt)
-                text = response.text.strip()
+        raw = self._call_llm(prompt)
+        if not raw:
+            return []
 
-                # Strip markdown fences if model wraps response anyway
-                text = re.sub(r"^```(?:json)?\s*", "", text)
-                text = re.sub(r"\s*```$", "", text)
+        try:
+            text = re.sub(r"^```(?:json)?\s*", "", raw)
+            text = re.sub(r"\s*```$", "", text)
+            results = json.loads(text)
+            scored = []
+            for item in results:
+                idx = item.get("index", 0) - 1
+                if 0 <= idx < len(titles):
+                    title = titles[idx]
+                    info = candidates[title]
+                    scored.append({
+                        "title": title,
+                        "url": info.get("url"),
+                        "score": int(item.get("score", 0)),
+                        "analysis": item.get("analysis", ""),
+                        "comment_count": len(info.get("comments", []))
+                    })
+            return scored
+        except json.JSONDecodeError:
+            console.print("[yellow]⚠️ LLM returned non-JSON for batch analysis.[/yellow]")
+            return []
 
-                results = json.loads(text)
-                scored = []
-                for item in results:
-                    idx = item.get("index", 0) - 1  # 1-indexed → 0-indexed
-                    if 0 <= idx < len(titles):
-                        title = titles[idx]
-                        info = candidates[title]
-                        scored.append({
-                            "title": title,
-                            "url": info.get("url"),
-                            "score": int(item.get("score", 0)),
-                            "analysis": item.get("analysis", ""),
-                            "comment_count": len(info.get("comments", []))
-                        })
-                return scored
+    def _generate_insights(self, high_signal: List[Dict], candidates: Dict, knowledge_context: str) -> str:
+        """
+        Second LLM call: synthesizes all high-signal leads into a strategic
+        community intelligence briefing for the NitroStack team.
+        """
+        if not self.model or not high_signal:
+            return ""
 
-            except json.JSONDecodeError:
-                console.print("[yellow]⚠️ LLM returned non-JSON. Retrying with next key...[/yellow]")
-                if not self._rotate_key():
-                    break
-                attempt += 1
+        # Build a rich context from the top leads
+        lead_summaries = []
+        for lead in high_signal[:15]:  # Cap at 15 to save tokens
+            info = candidates.get(lead["title"], {})
+            top_comments = " | ".join([
+                c.get("text", "")[:150]
+                for c in info.get("comments", [])[:4]
+                if c.get("text")
+            ])
+            lead_summaries.append(
+                f"• [{lead['score']}/10] {lead['title']}\n"
+                f"  Analysis: {lead['analysis']}\n"
+                f"  Top comments: {top_comments or 'N/A'}"
+            )
 
-            except Exception as e:
-                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-                    console.print(f"[yellow]⚠️ Key #{self._current_key_index + 1} exhausted. Rotating...[/yellow]")
-                    if not self._rotate_key():
-                        break
-                    time.sleep(3)
-                    attempt += 1
-                else:
-                    console.print(f"[bold red]❌ Unexpected LLM error: {str(e)[:120]}[/bold red]")
-                    break
+        leads_text = "\n\n".join(lead_summaries)
 
-        console.print("[bold red]❌ Could not complete LLM analysis after all retries.[/bold red]")
-        return []
+        prompt = f"""You are a senior Developer Relations strategist at NitroStack — an open-source TypeScript framework for building production-ready MCP (Model Context Protocol) servers.
+
+NitroStack CONTEXT:
+{knowledge_context[:600]}
+
+---
+TODAY'S HIGH-SIGNAL COMMUNITY INTELLIGENCE ({len(high_signal)} leads):
+
+{leads_text}
+
+---
+YOUR TASK:
+Write a sharp, insightful **Community Intelligence Briefing** for the NitroStack founding team. This is an internal strategic document, not marketing copy. Be direct, specific, and actionable.
+
+Structure your response in clean Markdown with these exact sections:
+
+## 🌐 What the Community Is Talking About
+A 2-3 sentence synthesis of the dominant themes and conversations happening right now in this space.
+
+## 🔥 Why This Matters for NitroStack
+How do these conversations connect to NitroStack's vision and opportunity? What pain points are developers expressing that NitroStack directly solves?
+
+## 🏆 Competitive Landscape
+What tools, frameworks, or alternatives are being discussed? What are their perceived strengths/weaknesses compared to NitroStack?
+
+## 🎯 Top 3 Actionable Opportunities
+Numbered list. Each opportunity should be specific: which thread, what to say, why it would resonate. Be tactical.
+
+## 💡 Strategic Takeaway
+One punchy paragraph: what is the single most important insight from today's scouting that the team should act on this week?
+
+Keep the tone sharp, confident, and data-driven. No fluff."""
+
+        console.print("[cyan]🧠 Generating community insights summary...[/cyan]")
+        return self._call_llm(prompt) or ""
 
     def analyze_leads(self) -> List[Dict]:
         """
-        Reads the JSON, pre-filters with keywords, then sends ONE batch call to Gemini.
+        Reads the JSON, pre-filters, then sends ONE batch call to Gemini.
+        Returns (high_signal_leads, raw_candidates) for use in report generation.
         """
         if not self.json_path.exists():
             console.print(f"[bold red]❌ JSON file not found: {self.json_path}[/bold red]")
@@ -203,28 +259,28 @@ class ReviewerAgent:
             data = json.load(f)
 
         knowledge_base = self._load_knowledge()
+        self._candidates = self._prefilter(data)  # Store for later use in report
 
-        # Step 1: Cheap pre-filter
-        candidates = self._prefilter(data)
-        if not candidates:
+        if not self._candidates:
             console.print("[yellow]⚠️ No candidates passed pre-filter.[/yellow]")
             return []
 
-        # Step 2: Single batch LLM call
-        console.print(f"[cyan]🧠 Reviewer sending 1 batch call to Gemini for {len(candidates)} candidates...[/cyan]")
-        all_scored = self._batch_analyze(candidates, knowledge_base)
+        console.print(f"[cyan]🧠 Reviewer sending 1 batch call to Gemini for {len(self._candidates)} candidates...[/cyan]")
+        all_scored = self._batch_analyze(self._candidates, knowledge_base)
 
-        # Step 3: Filter to high-signal only (score >= 5)
         high_signal = [lead for lead in all_scored if lead["score"] >= 5]
         high_signal.sort(key=lambda x: x["score"], reverse=True)
+        
+        self._knowledge_base = knowledge_base  # Store for insights generation
         return high_signal
 
     def display_report(self, leads: List[Dict], output_path: Optional[str] = None):
-        """Prints and optionally saves a table of the selected leads."""
+        """Prints a rich table and saves a full Markdown report."""
         if not leads:
             console.print("[yellow]⚠️ No high-signal leads identified in this batch.[/yellow]")
             return
 
+        # --- Console Table (unchanged, great UX) ---
         table = Table(
             title="🎯 High-Signal Technical Leads (LLM Verified)",
             show_header=True,
@@ -248,9 +304,55 @@ class ReviewerAgent:
 
         console.print(table)
 
+        # --- Markdown Report ---
         if output_path:
-            file_console = Console(record=True, width=140)
-            file_console.print(table)
+            # Generate insights (second LLM call)
+            candidates = getattr(self, "_candidates", {})
+            knowledge_base = getattr(self, "_knowledge_base", "")
+            insights_md = self._generate_insights(leads, candidates, knowledge_base)
+
+            date_str = datetime.now().strftime("%B %d, %Y – %H:%M")
+            md_lines = [
+                f"# 🚀 NitroScout Intelligence Report",
+                f"**Date:** {date_str}  |  **Platform:** Hacker News  |  **High-Signal Leads:** {len(leads)}",
+                "",
+                "---",
+                "",
+                "## 📊 Lead Scoreboard",
+                "",
+                "| Score | Title | Main Idea | 💬 |",
+                "|-------|-------|-----------|-----|",
+            ]
+
+            for lead in leads:
+                title = lead["title"].replace("|", "\\|")
+                analysis = lead["analysis"].replace("|", "\\|")
+                url = lead.get("url", "")
+                md_lines.append(
+                    f"| **{lead['score']}/10** | [{title}]({url}) | {analysis} | {lead['comment_count']} |"
+                )
+
+            md_lines += [
+                "",
+                "---",
+                "",
+            ]
+
+            if insights_md:
+                md_lines += [
+                    "## 🧠 Community Intelligence Briefing",
+                    "",
+                    insights_md,
+                    "",
+                    "---",
+                    "",
+                ]
+
+            md_lines += [
+                f"*Generated by NitroScout at {date_str}*",
+            ]
+
+            report_content = "\n".join(md_lines)
             export_path = Path(output_path)
-            export_path.write_text(file_console.export_text(), encoding="utf-8")
-            console.print(f"[dim]📄 Report saved to: {output_path}[/dim]")
+            export_path.write_text(report_content, encoding="utf-8")
+            console.print(f"[bold green]📄 Markdown report saved to: {output_path}[/bold green]")

@@ -44,7 +44,7 @@ async def main():
     save_dir = Path("agents/scouts/hackernews_posts")
     save_dir.mkdir(parents=True, exist_ok=True)
     json_filename = save_dir / f"{today_str}_HN_post.json"
-    report_filename = save_dir / f"{today_str}_HN_report.txt"
+    report_filename = save_dir / f"{today_str}_HN_report.md"
     
     # Structure data: Keys are titles
     json_data = {}
