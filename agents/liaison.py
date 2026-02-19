@@ -4,15 +4,16 @@ from pydantic_ai.models.gemini import GeminiModel
 from pathlib import Path
 
 # Initialize the model using the API key from .env (automatically picked up by pydantic-ai)
-model = GeminiModel('gemini-2.0-flash')
+# Initialize the model using the working version found in tests
+model = GeminiModel('gemini-2.5-flash')
 
 # Define the Liaison Agent
 liaison_agent = Agent(
     model,
     system_prompt=(
-        "You are NitroScout Liaison. Read the SOUL.md, AGENTS.md, and COMPETITORS.md "
-        "files provided in context to understand your persona and mission. "
-        "Your task is to draft a technical, helpful, and elite response to a developer inquiry."
+        "You are NitroScout Liaison. Your mission is to draft elite, technical, "
+        "and helpful responses for the Nitrostack community. Refer to the provided "
+        "SOUL, AGENTS, and NITROSTACK KNOWLEDGE BASE to ensure absolute accuracy."
     )
 )
 
@@ -23,15 +24,19 @@ async def draft_response(platform: str, inquiry: str):
     # Load context from brain files
     brain_dir = Path(__file__).parent.parent / "brain"
     soul = (brain_dir / "SOUL.md").read_text()
+    marketing = (brain_dir / "nitro_marketing.md").read_text() if (brain_dir / "nitro_marketing.md").exists() else ""
     
     prompt = f"""
     CONTEXT (SOUL):
     {soul}
 
+    NITROSTACK TECHNICAL KNOWLEDGE:
+    {marketing}
+
     PLATFORM: {platform}
     INQUIRY: {inquiry}
 
-    TASK: Draft a response following the SOUL guidelines. 
+    TASK: Draft a high-signal response following the SOUL guidelines and technical facts from the knowledge base. 
     Output only the markdown content of the draft.
     """
     

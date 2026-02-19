@@ -1,0 +1,22 @@
+                                             🎯 High-Signal Technical Leads                                             
+┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Score  ┃ Title                                           ┃ Comments ┃ Analysis                                       ┃
+┡━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 7      │ Show HN: MCPShield – Supply chain security      │        1 │ Technical MCP match: mcp, mcp server, Market   │
+│        │ scanner for MCP servers                         │          │ signal: vs, Context matches Nitrostack tech    │
+│        │                                                 │          │ stack: deployment                              │
+│ 7      │ Show HN: PatchworkMCP – Agents report what's    │        1 │ Technical MCP match: mcp, mcp server, Market   │
+│        │ missing from your MCP server                    │          │ signal: vs, Context matches Nitrostack tech    │
+│        │                                                 │          │ stack: typescript                              │
+│ 7      │ Show HN: RepoCrunch – Analyze any GitHub repo's │        0 │ Technical MCP match: mcp, mcp server, Market   │
+│        │ health in seconds                               │          │ signal: issue, Context matches Nitrostack tech │
+│        │                                                 │          │ stack: typescript                              │
+│ 5      │ Show HN: Code Scalpel – AST analyzer and        │        0 │ Technical MCP match: mcp, mcp server, Context  │
+│        │ security scanner (MCP server)                   │          │ matches Nitrostack tech stack: typescript      │
+│ 5      │ Show HN: AgentDX – Open-source linter and LLM   │        0 │ Technical MCP match: mcp, mcp server, Context  │
+│        │ benchmark for MCP servers                       │          │ matches Nitrostack tech stack: typescript      │
+│ 5      │ Show HN: Axon – Agentic AI with mandatory user  │        1 │ Technical MCP match: mcp, mcp server, Context  │
+│        │ approval and audit logging                      │          │ matches Nitrostack tech stack: typescript      │
+│ 5      │ Show HN: Poncho, a general agent harness built  │        2 │ Technical MCP match: mcp, Context matches      │
+│        │ for the web                                     │          │ Nitrostack tech stack: typescript              │
+└────────┴─────────────────────────────────────────────────┴──────────┴────────────────────────────────────────────────┘
