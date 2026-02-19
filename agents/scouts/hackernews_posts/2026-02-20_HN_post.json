@@ -17,6 +17,41 @@
     "post": "MCP servers let AI assistants (Claude, Copilot, Cursor) interact with databases, APIs, and filesystems. I&#x27;ve been reviewing a lot of these — both open-source and internal — and keep finding the same issues: hardcoded API keys, eval() on user input, SQL injection via string concatenation, wildcard permissions, disabled TLS.<p>So I built a static analysis scanner specifically for MCP servers. It runs 7 analyzers (secrets, static code, prompt injection, SQL&#x2F;command injection, permissions, network, dependencies) and takes ~45ms on a typical server.<p>Usage:<p><pre><code>  npx mcp-security-auditor scan .&#x2F;my-mcp-server\n</code></pre>\nNo account, runs locally. Outputs text, JSON, SARIF (for GitHub Security tab), HTML, or Markdown. Has a CI mode that exits non-zero above a severity threshold.<p>Available on both npm and PyPI. MIT licensed.<p>npm: <a href=\"https:&#x2F;&#x2F;www.npmjs.com&#x2F;package&#x2F;mcp-security-auditor\" rel=\"nofollow\">https:&#x2F;&#x2F;www.npmjs.com&#x2F;package&#x2F;mcp-security-auditor</a>\nPyPI: <a href=\"https:&#x2F;&#x2F;pypi.org&#x2F;project&#x2F;mcp-security-auditor&#x2F;\" rel=\"nofollow\">https:&#x2F;&#x2F;pypi.org&#x2F;project&#x2F;mcp-security-auditor&#x2F;</a>\nDev.to writeup with examples: <a href=\"https:&#x2F;&#x2F;dev.to&#x2F;prabhu_raja_fe2261464cb8e&#x2F;how-to-scan-your-mcp-servers-for-security-vulnerabilities-in-10-seconds-4m59\" rel=\"nofollow\">https:&#x2F;&#x2F;dev.to&#x2F;prabhu_raja_fe2261464cb8e&#x2F;how-to-scan-your-mc...</a><p>Would love feedback on detection patterns — there are definitely gaps I haven&#x27;t covered yet.",
     "comments": []
   },
+  "Show HN: Giving Claude Code persistent memory with a self-hosted MCP server": {
+    "date": "2026-02-19T19:33:09Z",
+    "url": "https://news.ycombinator.com/item?id=47078061",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "",
+    "comments": [
+      {
+        "author": "elvismdev",
+        "text": "Author here. I built this because Claude Code&#x27;s built-in memory (CLAUDE.md, Auto Memory, Session Memory) works well for static rules and compressed summaries, but loses the detailed reasoning behind decisions between sessions.<p>The server uses mem0ai as a library, Qdrant for vector storage, and Ollama for local embeddings (bge-m3, 1024 dims). Optional Neo4j adds a knowledge graph. Everything including the LLM fact extraction step can run locally.<p>A few engineering decisions worth mentioning:<p>- Zero-config auth: reads your existing OAT token from ~&#x2F;.claude&#x2F;.credentials.json instead of requiring a separate API key. 3-tier fallback chain (env var → credentials file → API key).<p>- If you enable the graph layer, each add_memory triggers 3 extra LLM calls. To avoid burning your Claude subscription quota on entity extraction, you can route those to a local Ollama model (Qwen3:14b at Q4_K_M gets 0.971 tool-calling F1).<p>I patched mem0 upstream to support OAT token reuse (PR #4035). Their official MCP server is cloud-only, which is why I built this local version.<p>Happy to discuss the architecture or tradeoffs.<p>Full writeup with setup guide: <a href=\"https:&#x2F;&#x2F;dev.to&#x2F;n3rdh4ck3r&#x2F;how-to-give-claude-code-persistent-memory-with-a-self-hosted-mem0-mcp-server-h68\" rel=\"nofollow\">https:&#x2F;&#x2F;dev.to&#x2F;n3rdh4ck3r&#x2F;how-to-give-claude-code-persistent...</a>",
+        "created_at": "2026-02-19T19:37:40.000Z"
+      }
+    ]
+  },
+  "Show HN: Matrix OS – An AI operating system where Claude is the kernel": {
+    "date": "2026-02-19T19:27:19Z",
+    "url": "https://news.ycombinator.com/item?id=47077978",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "Matrix OS is an AI-native operating system: self-creating, self-healing, and self-expanding.<p>The Claude Agent SDK is the literal kernel:<p><pre><code>  CPU        =&gt; Claude Opus 4.6                                                                             \n  RAM        =&gt; Context window (1M tokens)                                                                  \n  Kernel     =&gt; Main agent + 26 IPC tools                                                                   \n  Processes  =&gt; 5 sub-agents\n  Disk       =&gt; ~&#x2F;apps, ~&#x2F;data, ~&#x2F;system\n  Syscalls   =&gt; Read, Write, Edit, Bash\n  Drivers    =&gt; MCP servers\n  IPC        =&gt; File coordination\n</code></pre>\nBreak something, the healer agent repairs it. Need a new capability, the OS writes its own agents and skills. Describe an app, it appears as a file you own.<p>The bigger vision is Web 4: OS + messaging + social + AI + identity, unified under one federated handle via Matrix protocol.<p>GitHub: github.com&#x2F;HamedMP&#x2F;matrix-os\nWhitepaper: matrix-os.com&#x2F;whitepaper<p>Happy to answer questions about the architecture.",
+    "comments": [
+      {
+        "author": "cranberryturkey",
+        "text": "The kernel metaphor is interesting but I think the hard questions are in the gaps between the metaphor and reality.<p>Real kernels have well-defined failure modes. Process crashes, OOM kills, filesystem corruption — there are decades of battle-tested recovery patterns. When your &quot;kernel&quot; is a language model, failure is probabilistic and often silent. The healer agent can fix a broken file, but can it detect when a sub-agent made a subtly wrong architectural decision that will cascade later?<p>The 5 sub-agent model maps loosely to microservices, but coordination is the part that kills you. How do you handle conflicting state when two sub-agents modify overlapping resources? File-based IPC is simple but gives you no atomicity guarantees.<p>Genuine question: what does the failure rate look like in practice? When you say &quot;self-healing,&quot; is that recovering from syntax errors in generated code, or recovering from semantic failures where the agent did something technically valid but wrong?",
+        "created_at": "2026-02-19T19:32:12.000Z"
+      },
+      {
+        "author": "hamedmp",
+        "text": "super valid concerns, but i believe all of them fixable.<p>true that llms are stochastic by nature, but with models like opus 4.5&#x2F;4.6, the quality is just another magnitude. and all these can have live tests, giving feedback for the code written.<p>the &quot;kernel&quot; here is merely an analogy, just like how we don&#x27;t care about lsp and all the details in old ide&#x27;s, and just use claude code and such, the ai native os will abstract away all these details, like kernel, ...<p>the failure rate will depend on what type of projects you&#x27;re asking and how much you&#x27;re customizing your os. here is where the tests needs to be in place (and the healer jumps to fix the config format,...)",
+        "created_at": "2026-02-19T19:40:45.000Z"
+      }
+    ]
+  },
   "Show HN: Prodlint – A linter that catches what AI coding tools miss": {
     "date": "2026-02-19T18:44:02Z",
     "url": "https://news.ycombinator.com/item?id=47077393",
@@ -294,23 +329,5 @@
         "created_at": "2026-02-18T20:27:57.000Z"
       }
     ]
-  },
-  "Show HN: Code Scalpel – AST analyzer and security scanner (MCP server)": {
-    "date": "2026-02-18T19:32:32Z",
-    "url": "https://news.ycombinator.com/item?id=47065233",
-    "matched_keywords": [
-      "mcp-server"
-    ],
-    "post": "I built Code Scalpel as an MCP server for code analysis. It parses \nPython, JavaScript, TypeScript, and Java - builds control flow graphs \nand catches security bugs using taint analysis and symbolic execution.<p>Security detection:\n- 16+ vulnerability types (SQL&#x2F;NoSQL&#x2F;LDAP injection, XSS, command \n  injection, SSRF, CSRF, SSTI, prototype pollution, weak crypto, etc.)\n- Taint tracking across files\n- &lt;10% false positive rate\n- Z3 symbolic execution for path analysis<p>The MCP part exposes 23 tools that let AI agents analyze code:\n- security_scan, cross_file_security_scan\n- symbolic_execute (Z3-based path exploration)\n- generate_unit_tests (test gen from symbolic paths)\n- simulate_refactor (behavior preservation check)\n- code_policy_check (compliance verification)<p>CLI works standalone too. No-install usage:\n  uvx codescalpel mcp<p>Or: pip install codescalpel<p>Testing was important - 7,297 test cases with 94.86% coverage.<p>What I&#x27;m curious about:\n- Is &lt;10% false positive rate good enough for AppSec teams?\n- What other security checks would help?\n- Interest in expanding to Go&#x2F;Rust&#x2F;C++?<p>Target users: Individual developers (cost reduction story), security \nengineers (OWASP Top 10 evaluation), team leads (ROI analytics), \nenterprise architects (SOC2&#x2F;ISO compliance).<p>Repo: <a href=\"https:&#x2F;&#x2F;github.com&#x2F;3D-Tech-Solutions&#x2F;code-scalpel\" rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;3D-Tech-Solutions&#x2F;code-scalpel</a><p>MIT licensed, actively maintained. Feedback welcome!",
-    "comments": []
-  },
-  "Show HN: OtherFunc – Serverless functions in Brainfuck, Forth, BASIC, and more": {
-    "date": "2026-02-18T19:00:49Z",
-    "url": "https://news.ycombinator.com/item?id=47064820",
-    "matched_keywords": [
-      "mcp-server"
-    ],
-    "post": "Hi HN, This started as a weekend brainfuck interpreter and kept growing. I got curious whether you could make a <i>usable</i> serverless platform out of languages that were never intended for this.<p>OtherFunc is a serverless function platform for languages no major cloud provider (to my knowledge) supports. There are currently implementations of brainfuck, Forth, APL, Lisp (Scheme-like), and BASIC.<p>The interpreters are written in Rust, compiled to a single Wasm binary, and deployed on Cloudflare Workers. You can finally write Forth and publish it as an HTTP endpoint. You can see some examples on the showcase page: <a href=\"https:&#x2F;&#x2F;otherfunc.com&#x2F;showcase\" rel=\"nofollow\">https:&#x2F;&#x2F;otherfunc.com&#x2F;showcase</a><p>- brainfuck can make HTTP requests. The tape is extended to 33,000 cells with a memory-mapped I&#x2F;O region. You write a URL to cells 30,000+, set a method byte, trigger execution, and the response appears in cells 31,000+. The Brainfuck program to do this runs ~35,000 characters, but it works.<p>- The interpreters use a coroutine&#x2F;yield pattern for I&#x2F;O instead of async. When code needs to make an HTTP call or access KV storage, the interpreter suspends with an IoRequest, the Worker performs the fetch, then resumes execution with the response.<p>- There&#x27;s an MCP server so AI assistants can deploy functions directly. The thought was, if an LLM is writing all your code anyway, the language it is written in doesn&#x27;t really matter. But you probably don&#x27;t want to waste your tokens writing bf either.<p>Code is available here: <a href=\"https:&#x2F;&#x2F;github.com&#x2F;otherfunc\" rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;otherfunc</a>",
-    "comments": []
   }
 }
