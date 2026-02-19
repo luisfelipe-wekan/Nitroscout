@@ -1,0 +1,29 @@
+                                             🎯 High-Signal Technical Leads                                             
+┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Score  ┃ Title                                          ┃ Comments ┃ Analysis                                        ┃
+┡━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 7      │ Show HN: MCPShield – Supply chain security     │        1 │ Technical MCP match: mcp, mcp server, Market    │
+│        │ scanner for MCP servers                        │          │ signal: vs, Context matches Nitrostack tech     │
+│        │                                                │          │ stack: deployment                               │
+│ 7      │ Show HN: PatchworkMCP – Agents report what's   │        1 │ Technical MCP match: mcp, mcp server, Market    │
+│        │ missing from your MCP server                   │          │ signal: vs, Context matches Nitrostack tech     │
+│        │                                                │          │ stack: typescript                               │
+│ 5      │ Show HN: Open-source security scanner for MCP  │        0 │ Technical MCP match: mcp, model context         │
+│        │ (Model Context Protocol) servers               │          │ protocol, Market signal: issue                  │
+│ 5      │ Show HN: Prodlint – A linter that catches what │        0 │ Technical MCP match: mcp, mcp server, Context   │
+│        │ AI coding tools miss                           │          │ matches Nitrostack tech stack: typescript       │
+│ 5      │ Show HN: Rememex – Semantic file search that   │        0 │ Technical MCP match: mcp, mcp server, Context   │
+│        │ runs 100% locally (Rust/Tauri)                 │          │ matches Nitrostack tech stack: typescript       │
+│ 5      │ Show HN: Crit – Visual QA for iOS apps and AI  │        0 │ Technical MCP match: mcp, Market signal: issue  │
+│        │ coding agents                                  │          │                                                 │
+│ 5      │ Show HN: LLM-use – cost-effective LLM          │        0 │ Technical MCP match: mcp, mcp server, Market    │
+│        │ orchestrator for agents                        │          │ signal: vs                                      │
+│ 5      │ Show HN: Hydra – A safer OpenClaw alternative  │        0 │ Technical MCP match: mcp, mcp server, Market    │
+│        │ using containerized agents                     │          │ signal: issue                                   │
+│ 5      │ Show HN: Agorio – TypeScript SDK for Building  │        1 │ Technical MCP match: mcp, sdk, Context matches  │
+│        │ AI Shopping Agents (UCP/ACP)                   │          │ Nitrostack tech stack: typescript               │
+│ 5      │ Ask HN: In Cursor/agents, do plugins hide MCP  │        3 │ Technical MCP match: mcp, mcp server, Market    │
+│        │ tools from the main agent?                     │          │ signal: vs                                      │
+│ 5      │ Show HN: Code Scalpel – AST analyzer and       │        0 │ Technical MCP match: mcp, mcp server, Context   │
+│        │ security scanner (MCP server)                  │          │ matches Nitrostack tech stack: typescript       │
+└────────┴────────────────────────────────────────────────┴──────────┴─────────────────────────────────────────────────┘

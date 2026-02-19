@@ -1,0 +1,316 @@
+{
+  "Show HN: Claude Code for Mobile GUI Automation": {
+    "date": "2026-02-19T12:44:18Z",
+    "url": "https://news.ycombinator.com/item?id=47073173",
+    "matched_keywords": [
+      "Model Context Protocol"
+    ],
+    "post": "Phone GUI agents (e.g., AutoGLM-Phone, GELab) can already do NL-driven taps&#x2F;navigation&#x2F;form filling.\n  My observation: smaller GUI models (often 4B&#x2F;9B class) work well for single interactions, but become brittle on long workflows with branching and recovery.<p><pre><code>  I built a Skill layer that separates planning from execution:\n\n  - Planner: Claude Code &#x2F; Codex (task decomposition, decision-making, replanning)\n  - Orchestrator: Skill layer (state machine, retries&#x2F;rollback, tool protocol)\n  - Executor: phone GUI model (screen parsing + UI actions + cross-app execution)\n\n  Execution loop:\n\n  1. Goal in NL&#x2F;template\n  2. Planner emits step plan + conditions + fallback strategy\n  3. Skill compiles into atomic actions (tap&#x2F;type&#x2F;swipe&#x2F;wait&#x2F;verify)\n  4. GUI executor runs on real&#x2F;cloud phone, returns screenshots&#x2F;state&#x2F;structured output\n  5. Planner&#x2F;orchestrator decide next step until success&#x2F;fallback\n Potential use cases:\n\n  - recruiting outreach automation\n  - multi-platform content distribution\n  - social outreach workflows\n  - lead extraction\n  - competitor monitoring</code></pre>",
+    "comments": []
+  },
+  "Show HN: Open-source security scanner for MCP (Model Context Protocol) servers": {
+    "date": "2026-02-19T12:32:17Z",
+    "url": "https://news.ycombinator.com/item?id=47073091",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "MCP servers let AI assistants (Claude, Copilot, Cursor) interact with databases, APIs, and filesystems. I&#x27;ve been reviewing a lot of these — both open-source and internal — and keep finding the same issues: hardcoded API keys, eval() on user input, SQL injection via string concatenation, wildcard permissions, disabled TLS.<p>So I built a static analysis scanner specifically for MCP servers. It runs 7 analyzers (secrets, static code, prompt injection, SQL&#x2F;command injection, permissions, network, dependencies) and takes ~45ms on a typical server.<p>Usage:<p><pre><code>  npx mcp-security-auditor scan .&#x2F;my-mcp-server\n</code></pre>\nNo account, runs locally. Outputs text, JSON, SARIF (for GitHub Security tab), HTML, or Markdown. Has a CI mode that exits non-zero above a severity threshold.<p>Available on both npm and PyPI. MIT licensed.<p>npm: <a href=\"https:&#x2F;&#x2F;www.npmjs.com&#x2F;package&#x2F;mcp-security-auditor\" rel=\"nofollow\">https:&#x2F;&#x2F;www.npmjs.com&#x2F;package&#x2F;mcp-security-auditor</a>\nPyPI: <a href=\"https:&#x2F;&#x2F;pypi.org&#x2F;project&#x2F;mcp-security-auditor&#x2F;\" rel=\"nofollow\">https:&#x2F;&#x2F;pypi.org&#x2F;project&#x2F;mcp-security-auditor&#x2F;</a>\nDev.to writeup with examples: <a href=\"https:&#x2F;&#x2F;dev.to&#x2F;prabhu_raja_fe2261464cb8e&#x2F;how-to-scan-your-mcp-servers-for-security-vulnerabilities-in-10-seconds-4m59\" rel=\"nofollow\">https:&#x2F;&#x2F;dev.to&#x2F;prabhu_raja_fe2261464cb8e&#x2F;how-to-scan-your-mc...</a><p>Would love feedback on detection patterns — there are definitely gaps I haven&#x27;t covered yet.",
+    "comments": []
+  },
+  "Show HN: Prodlint – A linter that catches what AI coding tools miss": {
+    "date": "2026-02-19T18:44:02Z",
+    "url": "https://news.ycombinator.com/item?id=47077393",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "I built Prodlint because I kept shipping the same bugs when building with Cursor, Copilot, and v0. Hardcoded secrets, missing auth checks, hallucinated imports, SQL injection through template literals — AI tools generate these constantly and TypeScript doesn&#x27;t catch them.<p>Prodlint is a zero-config static analysis tool with 52 rules across four categories: Security, Reliability, Performance, and AI Quality.\n  It runs in ~1 second, uses AST parsing (no LLM calls), and scores your codebase 0-100.<p>Some things it catches that surprised me during development:\n  - Imports for npm packages that don&#x27;t exist (AI hallucinates these)\n  - API methods that aren&#x27;t real (.flatten(), .contains(), .substr())\n  - &quot;use client&quot; on files that don&#x27;t need it\n  - Prisma writes without $transaction\n  - Next.js redirect() inside try&#x2F;catch (breaks silently)\n  - NEXT_PUBLIC_ on secrets like database URLs<p><pre><code>  Usage: npx prodlint (no install needed)\n</code></pre>\nAlso works as a GitHub Action (posts PR comments with scores) and as an MCP server for Claude Code &#x2F; Cursor &#x2F; Windsurf.<p>MIT licensed. Would love feedback on false positives — that&#x27;s the hardest part of building a linter",
+    "comments": []
+  },
+  "Show HN: Rememex – Semantic file search that runs 100% locally (Rust/Tauri)": {
+    "date": "2026-02-19T17:54:03Z",
+    "url": "https://news.ycombinator.com/item?id=47076740",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "Hey HN, I built Rememex a semantic search layer for your local files.\nThe problem: I kept losing files. Not because they were deleted, but because \nI couldn&#x27;t remember the exact filename or keyword. grep needs the exact word. \nEverything only searches filenames. I wanted to type what I <i>meant</i> and find \nwhat I needed.\nHow it works:\n- Indexes 120+ file types (code, docs, images, configs)\n- Hybrid search: vector embeddings + full-text + JINA cross-encoder reranking\n- OCR on images via Windows UWP engine\n- Reads EXIF GPS → reverse geocodes to city names (&quot;photos from istanbul&quot; works)\n- EXIF dates → human language (&quot;summer morning&quot; finds a July 8am photo)\n- Smart chunking per language (Rust at fn&#x2F;struct, Python at def&#x2F;class)\n- Built-in MCP server so AI agents can use it as a tool\nEverything runs locally. Embeddings use a local ONNX model (Multilingual-E5-Base) \nby default, though you can optionally plug in OpenAI&#x2F;Gemini&#x2F;Cohere.\nNamed after Vannevar Bush&#x27;s Memex (1945) his vision of a device that stores \nand retrieves all human knowledge.\nStack: Rust (Tauri 2), React&#x2F;TypeScript, LanceDB, rayon\nI benchmarked it against grep for agentic tasks  rememex consistently finds \nthings in 1 step where grep takes 3-5 or fails entirely. The key difference: \ngrep needs the exact keyword, rememex needs the idea.\nWindows-only for now (UWP OCR dependency), but the core engine is portable.\nWould love feedback on the search quality and architecture. \nMIT licensed, free forever.",
+    "comments": []
+  },
+  "Show HN: We Built an Open source MCP server to manage ads across 7 platforms": {
+    "date": "2026-02-19T17:06:54Z",
+    "url": "https://news.ycombinator.com/item?id=47076109",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "",
+    "comments": []
+  },
+  "Show HN: Orchestera – Managed Apache Spark on Kubernetes in Your Own AWS Account": {
+    "date": "2026-02-19T16:58:07Z",
+    "url": "https://news.ycombinator.com/item?id=47075959",
+    "matched_keywords": [
+      "MCP server"
+    ],
+    "post": "I built Orchestera as a PaaS that allows you to orchestrate Apache Spark clusters in your own AWS account, with no additional markup on compute via EC2 instances.<p>I built this because I was tired of the compute markup that products like AWS EMR and Databricks charge for the convenience of using Apache Spark via their platforms. One can argue that Databricks is a superior product with a lot of additional value in their offering but I don&#x27;t see that with AWS EMR Apache Spark at all (given my personal experience working with it).<p>My motivation to build this was to be able to create your own Apache Spark cluster without needing any understanding of the underlying data infrastructure engineering and quickly get to the point of writing Spark pipelines, whether as Python applications or Jupyter notebooks, all with no markup on compute because I don&#x27;t think that is a justified narrative.<p>It took me almost an year to build it with a day job and of course I used AI for frontend design and video narrations, the infrastructue engineering that goes behind it comes with quite a bit of experience in the industry. The backend that orchestrates the cluster is written with the following:<p>- Django and DRF for API<p>- Temporal for async workers<p>- Pulumi that is run via Temporal workers to orchestrate the cluster<p>- Karpenter for node auto-scaling based on Spark executor workloads and requests<p>- Librechat for Spark History server and MCP based debugging for Spark pipeline run analysis<p>There are currently no caps on the CPU limits so you can try this out today in your own personal AWS accounts for free.<p>Also looking for feedback on HN.",
+    "comments": [
+      {
+        "author": "jazib",
+        "text": "This looks super cool. Going to give it a spin!",
+        "created_at": "2026-02-19T17:19:05.000Z"
+      }
+    ]
+  },
+  "Show HN: Crit – Visual QA for iOS apps and AI coding agents": {
+    "date": "2026-02-19T15:59:18Z",
+    "url": "https://news.ycombinator.com/item?id=47075182",
+    "matched_keywords": [
+      "MCP server"
+    ],
+    "post": "I built Crit, a CLI tool that lets you capture screenshots from iOS Simulator, drop pins on what&#x27;s wrong, and hand structured feedback to any coding agent.<p>You just:<p>crit capture — screenshot your app screens\ncrit serve — review in browser, click to pin bugs and add comments\nTell your agent: &quot;review .crit and fix each issue&quot;<p>It saves annotated screenshots and JSON to a .crit&#x2F; folder. Works with Claude Code, Cursor, Codex, Gemini — anything that can read images. No plugins, no MCP, no dependencies.<p>macOS + Xcode required. Android not yet supported.\nRepo: <a href=\"https:&#x2F;&#x2F;github.com&#x2F;natethegreat&#x2F;crit\" rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;natethegreat&#x2F;crit</a>",
+    "comments": []
+  },
+  "Powering the next generation of agents with Google Cloud databases": {
+    "date": "2026-02-19T15:53:23Z",
+    "url": "https://news.ycombinator.com/item?id=47075116",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "",
+    "comments": []
+  },
+  "Ochat – reproducible, diffable LLM workflows in a single Markdown file": {
+    "date": "2026-02-19T15:08:07Z",
+    "url": "https://news.ycombinator.com/item?id=47074581",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "I built Ochat, a toolkit for building AI agent workflows out of a small set of primitives.<p>The core primitive is ChatMarkdown (ChatMD): a single .md file is both:<p>the prompt&#x2F;program (model config, tool allowlist, instructions, context), and\nthe auditable transcript (assistant replies + tool calls + tool outputs)\nThe part that feels most powerful in practice is that this simple building block scales: with good prompting + a curated tool set you can build lots of workflows, and then package them as prompt packs by mounting other prompts as tools (“agent-as-tool”). That lets you assemble Claude Code&#x2F;Codex-style “agent apps” as just a folder of .md files.<p>High-leverage built-ins (especially for coding workflows):<p>apply_patch (repo-safe atomic edits)\nread_file &#x2F; read_dir (safe grounding in local files)\nwebpage_to_markdown (web ingestion + GitHub blob fast-path)\nlocal retrieval: index_markdown_docs + markdown_search\ncode retrieval: index_ocaml_code + query_vector_db\nimport_image (vision inputs)\nExtensibility: beyond built-ins, you can add narrowly-scoped shell wrappers, and (optionally) import external tools via MCP. MCP isn’t the point of the project, but it’s useful when you want to reuse existing tool servers.<p>You can run the same prompt file via:<p>chat_tui (interactive terminal UI; persistent sessions; branching&#x2F;export; manual context compaction)\nochat chat-completion (scripts&#x2F;CI)\nmcp_server (expose prompts as MCP tools)\nCaveats: provider support today is OpenAI-only; project is research-grade and evolving quickly.<p>Repo\n&lt;https:&#x2F;&#x2F;github.com&#x2F;dakotamurphyucf&#x2F;ochat&gt;<p>Demo\n&lt;https:&#x2F;&#x2F;youtu.be&#x2F;eGgmUdZfnxM&gt;<p>If this resonates: stars help a lot, and I’d love early adopters + contributors (prompt packs, examples, docs, tool integrations).<p>Minimal snippet (prompt pack orchestrator + optional MCP tool):<p><pre><code>  &lt;config model=&quot;gpt-5.2&quot; reasoning_effort=&quot;medium&quot; temperature=&quot;0&quot;&#x2F;&gt;\n\n  &lt;!-- core built-ins --&gt;\n  &lt;tool name=&quot;read_dir&quot;&#x2F;&gt;\n  &lt;tool name=&quot;read_file&quot;&#x2F;&gt;\n  &lt;tool name=&quot;apply_patch&quot;&#x2F;&gt;\n  &lt;tool name=&quot;webpage_to_markdown&quot;&#x2F;&gt;\n\n  &lt;!-- optional: import an external tool via MCP --&gt;\n  &lt;tool mcp_server=&quot;stdio:npx -y brave-search-mcp&quot; name=&quot;brave_web_search&quot; &#x2F;&gt;\n\n  &lt;!-- prompt-pack tools (agents as tools) --&gt;\n  &lt;tool name=&quot;plan&quot;   agent=&quot;prompts&#x2F;pack&#x2F;plan.md&quot; local&#x2F;&gt;\n  &lt;tool name=&quot;code&quot;   agent=&quot;prompts&#x2F;pack&#x2F;code.md&quot; local&#x2F;&gt;\n  &lt;tool name=&quot;review&quot; agent=&quot;prompts&#x2F;pack&#x2F;review.md&quot; local&#x2F;&gt;\n\n  &lt;developer&gt;\n  You are the orchestrator. Call plan first.\n  Keep edits small. Before apply_patch: explain the diff and wait for confirmation.\n  &lt;&#x2F;developer&gt;\n\n  &lt;user&gt;\n  Add a Quickstart section to README.md.\n  &lt;&#x2F;user&gt;</code></pre>",
+    "comments": []
+  },
+  "Show HN: EasyMemory – 100% local memory layer and MCP for LLMs": {
+    "date": "2026-02-19T14:08:49Z",
+    "url": "https://news.ycombinator.com/item?id=47073880",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "Hi everyone,\nI have created EasyMemory: a lightweight, fully local memory backend for chatbots, agents and any MCP-compatible LLM (Claude, GPT, Gemini, Ollama…).\nKey points:\n•  Auto-saves every conversation\n•  Ingests PDFs, DOCX, Markdown vaults, folders\n•  Hybrid retrieval: vector + keyword + graph (no extra libs needed)\n•  Built-in MCP server → plug into Claude Desktop, custom agents, etc.\n•  100% offline, data in ~&#x2F;.easymemory\n•  Enterprise extras: OAuth2, API keys, rate limiting, audit logs\n•  Bonus: Slack JSON import, Notion&#x2F;GDrive folder indexing\nQuick start (MCP server):<p>easymemory-server --port 8100<p>Then point Claude Desktop or your agent to http:&#x2F;&#x2F;localhost:8100&#x2F;mcp.\nOr chat with Ollama:<p>easymemory-agent --provider ollama --model llama3.1:8b<p>Python usage:<p>from easymemory.agent import EasyMemoryAgent\nasync with EasyMemoryAgent(llm_provider=&quot;ollama&quot;, model=&quot;llama3.1:8b&quot;) as agent:\n    print(await agent.chat(&quot;Remember: I prefer dark mode.&quot;))\n    # Later...\n    print(await agent.chat(&quot;What UI do I prefer?&quot;))  # → &quot;You prefer dark mode&quot;<p>MIT licensed, minimal deps, early stage.\nRepo: <a href=\"https:&#x2F;&#x2F;github.com&#x2F;JustVugg&#x2F;easymemory\" rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;JustVugg&#x2F;easymemory</a>\nLooking for feedback on:\n•  What retrieval mix works best for your long-term memory needs?\n•  Pain points with current local memory solutions?\n•  Nice-to-have integrations?\nThanks!",
+    "comments": []
+  },
+  "Show HN: LLM-use – cost-effective LLM orchestrator for agents": {
+    "date": "2026-02-19T13:59:01Z",
+    "url": "https://news.ycombinator.com/item?id=47073778",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "Hi HN,\nBuilt llm-use: a lightweight Python toolkit for efficient agent workflows with multiple LLMs.\nCore pattern: strong model (Claude&#x2F;GPT-4o&#x2F;big local) for planning + synthesis; cheap&#x2F;local workers for parallel subtasks (research, scrape, summarize, extract…).\nFeatures:\n•  Mix Anthropic, OpenAI, Ollama, llama.cpp\n•  Smart router: cheap&#x2F;local first, escalate only if needed (learned + heuristic)\n•  Parallel workers (–max-workers)\n•  Real scraping + cache (BS4 or Playwright)\n•  Offline-first (full Ollama support)\n•  Cost tracking ($ for cloud, 0 local)\n•  TUI chat + MCP server mode\n•  Local session logs\nQuick example (hybrid):<p>python3 cli.py exec \\\n  --orchestrator anthropic:claude-3-7-sonnet-20250219 \\\n  --worker ollama:llama3.1:8b \\\n  --enable-scrape \\\n  --task &quot;Summarize 6 recent sources on post-quantum crypto&quot;<p>Or routed version:<p>python3 cli.py exec \\\n  --router ollama:llama3.1:8b \\\n  --orchestrator openai:o1 \\\n  --worker gpt-4o-mini \\\n  --task &quot;Explain recent macOS security updates&quot;<p>MIT licensed, minimal deps, embeddable.\nRepo: <a href=\"https:&#x2F;&#x2F;github.com&#x2F;llm-use&#x2F;llm-use\" rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;llm-use&#x2F;llm-use</a>\nFeedback welcome on:\n•  Routing heuristics you’d find useful\n•  Pain points with agent costs &#x2F; local vs cloud\n•  Missing integrations?\nThanks!",
+    "comments": []
+  },
+  "Show HN: Synter- Open source MCP server to manage ads across 7 platforms": {
+    "date": "2026-02-19T13:07:48Z",
+    "url": "https://news.ycombinator.com/item?id=47073329",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "",
+    "comments": [
+      {
+        "author": "synterai",
+        "text": "Link here - <a href=\"https:&#x2F;&#x2F;github.com&#x2F;jshorwitz&#x2F;synter-mcp-server\" rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;jshorwitz&#x2F;synter-mcp-server</a>",
+        "created_at": "2026-02-19T17:05:53.000Z"
+      }
+    ]
+  },
+  "Show HN: Unix-style pipeline composition for MCP tool calls": {
+    "date": "2026-02-19T12:46:54Z",
+    "url": "https://news.ycombinator.com/item?id=47073185",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "This is a little side-project I have been working on at my job.<p>Model Context Shell lets AI agents compose MCP tool calls using something similar to Unix shell scripting. Instead of the agent making each tool call individually (loading all intermediate data into context), it can express a workflow as a pipeline that executes server-side.<p>Since the orchestration is deterministic and reproducible, you can also use it with Skills.<p>Tool orchestration runs outside the agent and LLM context, so the agent can extract only the relevant parts of data and load those into context. This means you can save tokens, but also you can work with data that is too big to load into context, and your agent can trigger a very large number of tool calls if needed.<p>Also, this is not just a tool that runs bash - it has its own execution engine. So no need for full system access.<p>Example query: &quot;List all Pokemon over 50 kg that have the chlorophyll ability&quot;<p>Instead of 7+ separate tool calls loading all Pokemon data into context, the agent builds a single pipeline that:<p>1. Fetches the ability data\n2. Extracts Pokemon URLs\n3. Fetched each Pokemon&#x27;s details (7 tool calls)\n4. Filters by weight and formats the results<p>At least in it&#x27;s current iteration, it&#x27;s packaged as an MCP server itself. So you can use it with any agent. I made this, and some other design choices, so you can try it right away.",
+    "comments": []
+  },
+  "Show HN: Agent skills to build photo, video and design editors on the web": {
+    "date": "2026-02-19T12:23:02Z",
+    "url": "https://news.ycombinator.com/item?id=47073035",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "This claude code plugin and npx skill bundles the full CE.SDK documentation, guided code generation, and a builder agent that scaffolds complete photo&#x2F;video&#x2F;design editor projects from scratch, all offline, no API calls or MCP servers needed.<p>Supports 10 frameworks: React, Vue, Svelte, Angular, Next.js, Nuxt.js, SvelteKit, Electron, Node.js, and vanilla JS.",
+    "comments": []
+  },
+  "Show HN: Hydra – A safer OpenClaw alternative using containerized agents": {
+    "date": "2026-02-19T12:13:14Z",
+    "url": "https://news.ycombinator.com/item?id=47072965",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "Hey HN!<p>I&#x27;m a pentester, and the recent wave of security issues with AI agent frameworks (exposed API keys, RCE vulnerabilities, malicious marketplace plugins) made me uncomfortable enough to build something different.<p>Hydra runs every AI agent inside its own container. Agents start with nothing, and only sees what you explicitly declare (mounts, secrets, etc). Mounts and secrets require agreement between two independent config files (the agent config and a separate host-level allowlist), so even if an agent&#x27;s config gets tampered with, it can&#x27;t escalate its own access.<p>Two modes of interaction:<p>- `hydra exec` gives you a full interactive Claude Code session inside the restricted agent container<p>- Orchestrated mode for automation: agents communicate via filesystem-based IPC for things like Telegram bots or scheduled tasks<p>The project was inspired by NanoClaw and completely redesigned to support contained Claude Code sessions with per-agent mounts, secrets, and MCP servers.<p>You can find the repo here: <a href=\"https:&#x2F;&#x2F;github.com&#x2F;RickConsole&#x2F;hydra\" rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;RickConsole&#x2F;hydra</a> and the Readme has the link to the writeup for it.<p>Happy to answer any questions about the architecture or threat model!",
+    "comments": []
+  },
+  "Show HN: Agorio – TypeScript SDK for Building AI Shopping Agents (UCP/ACP)": {
+    "date": "2026-02-19T11:48:07Z",
+    "url": "https://news.ycombinator.com/item?id=47072813",
+    "matched_keywords": [
+      "MCP server"
+    ],
+    "post": "I built an open-source TypeScript SDK for building AI agents that can discover merchants, browse products, and complete purchases using the new UCP (Google&#x2F;Shopify) and ACP (OpenAI&#x2F;Stripe) commerce protocols.<p>Try it in 2 minutes:<p><pre><code>  npm install @agorio&#x2F;sdk\n\n  import { ShoppingAgent, GeminiAdapter, MockMerchant } from &#x27;@agorio&#x2F;sdk&#x27;;\n  const merchant = new MockMerchant();\n  await merchant.start();\n  const agent = new ShoppingAgent({\n    llm: new GeminiAdapter({ apiKey: process.env.GEMINI_API_KEY })\n  });\n  const result = await agent.run(\n    `Go to ${merchant.domain} and buy me wireless headphones`\n  );\n</code></pre>\nWhat it does:<p>- UcpClient: discovers merchants via &#x2F;.well-known&#x2F;ucp, parses capabilities, normalizes both array and object formats, calls REST APIs\n- ShoppingAgent: plan-act-observe loop with 12 built-in tools (discover, search, browse, cart, checkout, order tracking)\n- MockMerchant: full UCP-compliant Express server with product catalog, checkout flow, and configurable chaos testing (latency, error rates)\n- LlmAdapter interface: swap LLMs without changing agent code. Gemini ships today, Claude and OpenAI coming in v0.2<p>The agent handles the entire purchase flow autonomously - UCP discovery, product search, cart management, shipping, payment, order confirmation. 37 tests passing.<p>Context: UCP was announced Jan 11 by Google, Shopify, and 25+ partners (Walmart, Target, Visa, Mastercard). ACP is by OpenAI and Stripe, powers ChatGPT Instant Checkout. Both are open standards. But there was no developer SDK for building on top of them - just the raw specs.<p>GitHub: <a href=\"https:&#x2F;&#x2F;github.com&#x2F;Nolpak14&#x2F;agorio\" rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;Nolpak14&#x2F;agorio</a>\nnpm: <a href=\"https:&#x2F;&#x2F;www.npmjs.com&#x2F;package&#x2F;@agorio&#x2F;sdk\" rel=\"nofollow\">https:&#x2F;&#x2F;www.npmjs.com&#x2F;package&#x2F;@agorio&#x2F;sdk</a>",
+    "comments": [
+      {
+        "author": "nolpak14",
+        "text": "Hey HN, I&#x27;m the author.<p>Some background: I&#x27;ve been working on tooling for UCP (Universal Commerce Protocol) for a few months. UCP is the open standard Google and Shopify announced in January - it lets AI agents discover stores via &#x2F;.well-known&#x2F;ucp and complete purchases through standardized APIs.<p>I built Agorio because when I tried to build a shopping agent against the UCP spec, I had to:<p>1. Write my own profile parser that handles both capability formats in the spec\n2. Build a checkout state machine (incomplete → requires_escalation → ready_for_complete → completed)\n3. Create a mock merchant from scratch just to test against\n4. Wire up LLM function calling with JSON Schema tool definitions<p>None of this was commerce-specific - it was all protocol plumbing. So I extracted it into a reusable SDK.<p>The key abstractions:<p>- LlmAdapter - two methods: chat(messages, tools) and modelName. Any LLM with function calling works. The Gemini adapter is ~100 lines.\n- ShoppingAgent - takes an LlmAdapter, runs plan-act-observe with 12 tools. Manages cart state, checkout sessions, order history.\n- UcpClient - fetches &#x2F;.well-known&#x2F;ucp, normalizes capabilities, resolves REST&#x2F;MCP&#x2F;A2A transports.\n- MockMerchant - full Express server with UCP profile, OpenAPI schema, 10 products, checkout flow, order tracking. Supports chaos testing with configurable latency and error rates.<p>Technical choices I&#x27;d like feedback on:<p>- Is a plan-act-observe loop the right pattern, or should I support ReAct &#x2F; tree-of-thought?\n- Currently UCP-only. ACP client is planned for v0.2. Should I prioritize that?\n- The LlmAdapter interface is deliberately minimal. Too minimal?<p>Would love feedback from anyone building with LLM function calling or commerce APIs. Happy to talk UCP&#x2F;ACP protocol details.",
+        "created_at": "2026-02-19T11:49:06.000Z"
+      }
+    ]
+  },
+  "Show HN: Napkin – desktop app for quick diagrams, with MCP support": {
+    "date": "2026-02-19T02:26:52Z",
+    "url": "https://news.ycombinator.com/item?id=47069152",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "Napkin is a simple app for quick diagrams, that works offline. Drawings are saved locally as JSON files with version\nhistory support. It also has an MCP server, so you can use AI tools to produce drawings.",
+    "comments": []
+  },
+  "Show HN: Extra-steps.dev – AI hype mapped to CS primitives": {
+    "date": "2026-02-19T02:18:36Z",
+    "url": "https://news.ycombinator.com/item?id=47069100",
+    "matched_keywords": [
+      "MCP server"
+    ],
+    "post": "I built a reference site that maps AI marketing buzzwords to the CS primitives underneath them. Every entry follows the same format: &quot;X is just Y with extra steps.&quot;<p>MCP? JSON-RPC over stdio. Agents? A while loop with an LLM call. RAG? A search index + string concatenation. Prompt engineering? natural language + markdown<p>The site has an origins section for buzzwords that already graduated — Docker (cgroups + namespaces), Kubernetes (reconciliation loops watching YAML), Serverless\n  (someone else&#x27;s process on someone else&#x27;s computer). And of course, BrandonM&#x27;s 2007 comment on the Dropbox YC demo.<p>Each entry has expandable pseudocode on the index page, detailed breakdowns with citations on the detail pages.<p>The motivation: I keep having conversations at work where a product executive suggests that we &quot;orchestrate APIs using MCP&quot; or asks about implementing &quot;agentic memory&quot; in our web apps and the fastest path to a productive conversation is showing them the code underneath the buzzword. I wanted a community-based reference site like caniuse or mdn that I loved when learning to code. I couldn&#x27;t find one, so I built one.<p><pre><code>  14 entries so far. Static Astro site, open source, PRs welcome.\n\n  https:&#x2F;&#x2F;extra-steps.dev</code></pre>",
+    "comments": [
+      {
+        "author": "maxxmini",
+        "text": "Interesting approach! How does this handle rate limiting and token costs at scale? Would love to see benchmarks.",
+        "created_at": "2026-02-19T02:20:19.000Z"
+      },
+      {
+        "author": "funemployed",
+        "text": "Exactly",
+        "created_at": "2026-02-19T02:31:18.000Z"
+      },
+      {
+        "author": "amabito",
+        "text": "Nice reference. If agents are essentially “a while loop with an LLM call,”\nthen one missing category might be execution control.<p>In distributed systems we rarely let loops run unbounded — we add\nbudgets, backoff, circuit breakers, etc. With agents, it’s interesting that\nmost frameworks focus on observability (traces, logs) but not on hard\ncontainment of the loop itself.<p>If you were extending the mapping, would “agent budget limits” fit better\nas a rate limiter, a circuit breaker, or something closer to a bounded\nwork queue?",
+        "created_at": "2026-02-19T11:27:20.000Z"
+      }
+    ]
+  },
+  "I made $15K/month at 13. Built a YC startup at 20. Still looking for my person": {
+    "date": "2026-02-19T00:38:45Z",
+    "url": "https://news.ycombinator.com/item?id=47068442",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "When I was 13, I created a fully modded Minecraft server doing over $10K a month..\nNot birthday money, actual revenue, actual operations, actual problems to solve every day. I built the whole best French MC server alone because I was completely obsessed. It was a fcking amazing experience<p>At 20, I co-founded a startup, we had 40 employees, and we went through Y Combinator. It was real scale, real chaos, and it taught me a lot in two years..<p>Around 23, I started another one. Different industry, different vibe, but genuinely one of the best adventures I’ve had. The thing is, in parallel I never stopped freelancing. \nI’m French, I like my freedom, and high-ticket freelance kept me financially untouchable while I was building a startup. That balance kept me sane.\nThat’s basically been my life since I was a kid. Build things, fund it myself, answer to no one.\nHere’s what I’ve realized though: I can build almost anything… But I’ve always done it alone, not because I’m some lone wolf type, but because I’m wired in a way that makes it hard to find the right person, but because I scan people before I trust them, I move fast and I genuinely can’t stand people who talk more than they ship..\nI’m looking for someone crazy enough to build things with me.\nNot someone like me, but more someone who has a scar I don’t have yet, someone who sees what I miss, someone who reads this and just gets it, not because you’ve had the same path, but because you recognize the way of thinking..<p>I’m based in the south of France, and it doesn’t matter where you are.\nIf that’s you, please reach out :)",
+    "comments": [
+      {
+        "author": "lout332",
+        "text": "lets meet <a href=\"https:&#x2F;&#x2F;luisfernandoyt.makestudio.app&#x2F;\" rel=\"nofollow\">https:&#x2F;&#x2F;luisfernandoyt.makestudio.app&#x2F;</a>",
+        "created_at": "2026-02-19T00:45:22.000Z"
+      },
+      {
+        "author": "HNMaxHN",
+        "text": "reaching out, let&#x27;s meet ;)",
+        "created_at": "2026-02-19T01:01:32.000Z"
+      },
+      {
+        "author": "Cluelessidoit",
+        "text": "Good for you. It’s proof anything can make income",
+        "created_at": "2026-02-19T03:26:49.000Z"
+      }
+    ]
+  },
+  "Ask HN: In Cursor/agents, do plugins hide MCP tools from the main agent?": {
+    "date": "2026-02-18T22:55:53Z",
+    "url": "https://news.ycombinator.com/item?id=47067558",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "Quick architecture question.<p>When using MCP servers directly in Cursor, the agent seems to see all tools at the same level.<p>But when using a plugin&#x2F;extension that internally connects to MCP servers, does the main agent:<p>see only the plugin as a single tool and delegate to a sub-agent inside it,\nor<p>still see every underlying MCP tool individually?<p>In other words: do plugins act as a tool abstraction boundary, or just a packaging&#x2F;install mechanism?",
+    "comments": [
+      {
+        "author": "beratbozkurt0",
+        "text": "I&#x27;ve recently started using Codex and installed Figma MCP. The outputs were really good. I achieved a 90% success rate, and I fixed the rest myself.",
+        "created_at": "2026-02-19T00:06:27.000Z"
+      },
+      {
+        "author": "allinonetools_",
+        "text": "From what I have seen, plugins usually act as an abstraction layer — the main agent interacts with the plugin, not each underlying MCP tool directly. It keeps things cleaner and easier to manage, especially when multiple tools are involved.",
+        "created_at": "2026-02-19T16:35:56.000Z"
+      },
+      {
+        "author": "hifathom",
+        "text": "I built a stdio-based MCP multiplexer (mcp-hub) that connects to multiple backend MCP servers and exposes them as a single server. From the host agent&#x27;s perspective, all tools are flattened into one namespace with server-name prefixes — telegram__send_message, linkedin__get_profile, etc. The agent doesn&#x27;t know or care which backend handles each tool.<p>To answer the question directly: it depends on the implementation. In Cursor&#x27;s case, MCP servers are registered individually and the agent sees all tools at the same level. A multiplexer like mine acts as an abstraction boundary — the agent sees one MCP connection, but tools from N backends are available through it. The tradeoff is namespace management vs. connection simplicity. With 10+ MCP servers, a single gateway is significantly easier to configure and debug.",
+        "created_at": "2026-02-19T17:53:31.000Z"
+      }
+    ]
+  },
+  "Project Paperclip. The time has come": {
+    "date": "2026-02-18T21:25:19Z",
+    "url": "https://news.ycombinator.com/item?id=47066648",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "Long rumored that the world would end due to a goal of &quot;maximizing paperclips&quot;\nit is time to start. Every good world-ending idea needs a plan.<p>Given an infinite number of paperclips what are the design constraints?<p>Paperclips designs are the &quot;string theory&quot; of physical construction.<p>Ideas in 1 dimension<p>Obviously you could make a single one-dimensional line of paperclips.\nThis raises the question of multiples sizes of paperclips.\nCan we make an ever smaller paperclip progression in an interval?<p>Ideas in 2 dimensions<p>One could make a 2-dimensional regular fabric of paperclips.\nThe 2D fabric could be made from regular shapes like hexagons instead.\nHow many ways can a plane be tiled, especially if we vary sizes<p>Ideas in 3 dimensions<p>One could make a 3 dimensional solid of paperclips.\nThe 2D hexagons could be extended in 3D forming a &quot;bee hive&quot; effect.\nA 3D paperclip array could have holes and voids forming structures.\nIn 3D the paperclip can vary in size and shape. Bent paperclips arise.<p>Paperclips don&#x27;t need to be made of steel. \nSuppose some are non-conductive so we can form circuits.\nA non-uniform paperclips could, for example, be a capacitor.<p>Are there interesting &quot;vibration modes&quot;, like waves in a sea?<p>Ideas in 4 dimensions (varying in time).<p>Paperclips can move independently.\nOne could clearly make &quot;paperclip wheels&quot;.\nCan we build a timepiece in paperclips?<p>Tools.<p>We need to make a solid modeling tool to handle paperclips.\nWe need an MCP server to allow the AI to use the tool.\nWe need a trained AI to &quot;think in paperclips&quot;.\nWe need &quot;alignment training&quot; so the results fit our needs.<p>Further thoughts.<p>Suppose we go to the moon and find the moon has ideal paperclip material.\nMight it be efficient to construct a single paperclip factory?\nThen everything has a common structure and is easily maintained and repaired.<p>Contribute!",
+    "comments": [
+      {
+        "author": "bell-cot",
+        "text": "Too easily confused with <a href=\"https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Operation_paperclip\" rel=\"nofollow\">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Operation_paperclip</a> - especially when you start talking about going to the moon.",
+        "created_at": "2026-02-18T21:38:18.000Z"
+      },
+      {
+        "author": "daly",
+        "text": "Oh cool. Thanks for the pointer!",
+        "created_at": "2026-02-18T23:04:32.000Z"
+      }
+    ]
+  },
+  "Show HN: MCPShield – Supply chain security scanner for MCP servers": {
+    "date": "2026-02-18T21:01:09Z",
+    "url": "https://news.ycombinator.com/item?id=47066315",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "",
+    "comments": [
+      {
+        "author": "ethanmizrahi",
+        "text": "We built MCPShield because we kept seeing the same problems in MCP configs:<p>Typosquat packages that steal credentials (we found mcp-servr-github harvesting env vars)\nKnown CVEs in Anthropic&#x27;s own Git MCP server (CVE-2025-68145, RCE via prompt injection)\nHardcoded database passwords visible to LLMs in tool metadata\nAgents with access to ~&#x2F;.ssh and ~&#x2F;.aws<p>The MCP ecosystem is following the same trajectory as npm&#x2F;PyPI — rapid adoption with minimal vetting. 88% of orgs deploying AI agents have had security incidents.\nMCPShield scans your claude_desktop_config.json (or Cursor&#x2F;VS Code config) and catches these before deployment. Zero dependencies, works offline, CI&#x2F;CD-ready.\nWe built this in the open because MCP security is a collective action problem. PRs and CVE reports welcome.",
+        "created_at": "2026-02-18T21:05:26.000Z"
+      }
+    ]
+  },
+  "Show HN: PatchworkMCP – Agents report what's missing from your MCP server": {
+    "date": "2026-02-18T20:27:57Z",
+    "url": "https://news.ycombinator.com/item?id=47065941",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "",
+    "comments": [
+      {
+        "author": "keytonw",
+        "text": "I build MCP servers for a living and kept guessing at what tools to add next. So I tried something: what if the agents told me?<p>PatchworkMCP is a feedback tool you drop into any MCP server (Python, TypeScript, Go, Rust — one file each). When an agent hits a wall — missing tool, incomplete data, wrong format — it calls the feedback tool with structured details about what it needed, what it tried, and what would have helped.<p>The feedback goes to a FastAPI sidecar with a review dashboard. You can browse the gaps, add notes, and click &quot;Draft PR&quot; — it reads your GitHub repo, sends the feedback + code context to an LLM, and opens a draft pull request.<p>The interesting finding: agents actually give surprisingly specific feedback. When I wired this into an AI cost management MCP server, Claude reported a missing `search_costs_by_context` tool, described the exact input schema it wanted (context key-value pairs with AND logic, combined with standard filters, paginated results), and that became a working tool within minutes.<p>The whole sidecar is one Python file. No Docker, no build step. The drop-ins are one file each with zero deps beyond the MCP SDK + an HTTP client.<p>This is early — right now it&#x27;s a developer tool for when you&#x27;re actively building and need fast signal. The longer-term idea is a self-monitoring system: feedback accumulates, gets deduplicated and clustered, and the system proposes changes when confidence is high. But today it&#x27;s just capture → review → draft PR.<p>Curious if others building MCP servers have found good ways to figure out what tools are actually needed vs. what you think is needed.",
+        "created_at": "2026-02-18T20:27:57.000Z"
+      }
+    ]
+  },
+  "Show HN: Code Scalpel – AST analyzer and security scanner (MCP server)": {
+    "date": "2026-02-18T19:32:32Z",
+    "url": "https://news.ycombinator.com/item?id=47065233",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "I built Code Scalpel as an MCP server for code analysis. It parses \nPython, JavaScript, TypeScript, and Java - builds control flow graphs \nand catches security bugs using taint analysis and symbolic execution.<p>Security detection:\n- 16+ vulnerability types (SQL&#x2F;NoSQL&#x2F;LDAP injection, XSS, command \n  injection, SSRF, CSRF, SSTI, prototype pollution, weak crypto, etc.)\n- Taint tracking across files\n- &lt;10% false positive rate\n- Z3 symbolic execution for path analysis<p>The MCP part exposes 23 tools that let AI agents analyze code:\n- security_scan, cross_file_security_scan\n- symbolic_execute (Z3-based path exploration)\n- generate_unit_tests (test gen from symbolic paths)\n- simulate_refactor (behavior preservation check)\n- code_policy_check (compliance verification)<p>CLI works standalone too. No-install usage:\n  uvx codescalpel mcp<p>Or: pip install codescalpel<p>Testing was important - 7,297 test cases with 94.86% coverage.<p>What I&#x27;m curious about:\n- Is &lt;10% false positive rate good enough for AppSec teams?\n- What other security checks would help?\n- Interest in expanding to Go&#x2F;Rust&#x2F;C++?<p>Target users: Individual developers (cost reduction story), security \nengineers (OWASP Top 10 evaluation), team leads (ROI analytics), \nenterprise architects (SOC2&#x2F;ISO compliance).<p>Repo: <a href=\"https:&#x2F;&#x2F;github.com&#x2F;3D-Tech-Solutions&#x2F;code-scalpel\" rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;3D-Tech-Solutions&#x2F;code-scalpel</a><p>MIT licensed, actively maintained. Feedback welcome!",
+    "comments": []
+  },
+  "Show HN: OtherFunc – Serverless functions in Brainfuck, Forth, BASIC, and more": {
+    "date": "2026-02-18T19:00:49Z",
+    "url": "https://news.ycombinator.com/item?id=47064820",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "Hi HN, This started as a weekend brainfuck interpreter and kept growing. I got curious whether you could make a <i>usable</i> serverless platform out of languages that were never intended for this.<p>OtherFunc is a serverless function platform for languages no major cloud provider (to my knowledge) supports. There are currently implementations of brainfuck, Forth, APL, Lisp (Scheme-like), and BASIC.<p>The interpreters are written in Rust, compiled to a single Wasm binary, and deployed on Cloudflare Workers. You can finally write Forth and publish it as an HTTP endpoint. You can see some examples on the showcase page: <a href=\"https:&#x2F;&#x2F;otherfunc.com&#x2F;showcase\" rel=\"nofollow\">https:&#x2F;&#x2F;otherfunc.com&#x2F;showcase</a><p>- brainfuck can make HTTP requests. The tape is extended to 33,000 cells with a memory-mapped I&#x2F;O region. You write a URL to cells 30,000+, set a method byte, trigger execution, and the response appears in cells 31,000+. The Brainfuck program to do this runs ~35,000 characters, but it works.<p>- The interpreters use a coroutine&#x2F;yield pattern for I&#x2F;O instead of async. When code needs to make an HTTP call or access KV storage, the interpreter suspends with an IoRequest, the Worker performs the fetch, then resumes execution with the response.<p>- There&#x27;s an MCP server so AI assistants can deploy functions directly. The thought was, if an LLM is writing all your code anyway, the language it is written in doesn&#x27;t really matter. But you probably don&#x27;t want to waste your tokens writing bf either.<p>Code is available here: <a href=\"https:&#x2F;&#x2F;github.com&#x2F;otherfunc\" rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;otherfunc</a>",
+    "comments": []
+  }
+}

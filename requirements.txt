@@ -1,4 +1,3 @@
-pydantic-ai
 crawl4ai
 google-generativeai
 google-genai
