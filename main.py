@@ -11,10 +11,10 @@ from rich.prompt import Prompt
 # Load environment variables first
 load_dotenv()
 
-from agents.scout import HackerNewsScout
+from agents.hn_scout import HackerNewsScout
 from agents.reddit_scout import RedditScout
-from agents.librarian import LibrarianAgent
 from agents.reviewer import ReviewerAgent
+from agents.scouts.campaign_manager import CampaignManagerAgent
 
 console = Console()
 
@@ -27,21 +27,23 @@ def ensure_dir(path: Path) -> Path:
 def select_platforms() -> list[str]:
     """
     Interactive terminal menu to select which platforms to scout.
-    Supports: HackerNews, Reddit, or both.
+    Options: HackerNews, Reddit, both, Campaign Manager only, or full scan + campaign.
     """
     console.print()
     console.print(Panel.fit(
         "[bold cyan]🎯 NitroScout — Platform Selection[/bold cyan]\n\n"
         "[white]1[/white] → Hacker News only\n"
         "[white]2[/white] → Reddit only\n"
-        "[white]3[/white] → Both (full scan)",
+        "[white]3[/white] → Both (full scan)\n"
+        "[white]4[/white] → [bold magenta]Campaign Manager[/bold magenta] only (uses existing reports)\n"
+        "[white]5[/white] → [bold magenta]Full scan + Campaign Manager[/bold magenta]",
         title="Select Platform",
         border_style="cyan"
     ))
 
     choice = Prompt.ask(
         "[bold yellow]Your choice[/bold yellow]",
-        choices=["1", "2", "3"],
+        choices=["1", "2", "3", "4", "5"],
         default="3"
     )
 
@@ -49,6 +51,8 @@ def select_platforms() -> list[str]:
         "1": ["hackernews"],
         "2": ["reddit"],
         "3": ["hackernews", "reddit"],
+        "4": ["campaign_manager"],
+        "5": ["hackernews", "reddit", "campaign_manager"],
     }[choice]
 
 
@@ -90,7 +94,16 @@ async def run_reddit(today_str: str):
     """Runs the full Reddit scouting pipeline (two-phase)."""
     console.print(Panel("🟠 Reddit Pipeline", style="bold yellow"))
 
-    reddit_scout = RedditScout(subreddits=["mcp"])
+    reddit_scout = RedditScout(subreddits=[
+        "mcp",           # Core: Model Context Protocol community
+        "LocalLLaMA",    # Largest AI tools community
+        "ChatGPTCoding",  # Devs using LLMs in coding workflows
+        "ClaudeAI",      # Claude-specific — MCP is its native protocol
+        "AIAgents",      # AI agent builders — prime NitroStack audience
+        "typescript",    # TypeScript devs — NitroStack's language
+        "node",          # Node.js ecosystem — NitroStack runtime
+        "artificial",    # General AI with technical depth
+    ])
     leads = reddit_scout.scan(limit=50, sort="hot")
 
     if not leads:
@@ -144,6 +157,17 @@ async def run_reddit(today_str: str):
     console.print(f"[cyan]🎯 Reddit High-Signal leads found: {len(high_signal)}[/cyan]")
 
 
+async def run_campaign_manager(today_str: str):
+    """Runs the Campaign Manager: reads all scout reports and generates a campaign playbook."""
+    console.print(Panel("🎯 Campaign Manager Pipeline", style="bold magenta"))
+    agent = CampaignManagerAgent()
+    output_path = agent.run(today_str)
+    if output_path:
+        console.print(f"[bold magenta]✅ Campaign playbook ready: {output_path}[/bold magenta]")
+    else:
+        console.print("[yellow]⚠️  Campaign Manager produced no output.[/yellow]")
+
+
 async def main():
     """The Heartbeat of NitroScout."""
     console.print(Panel.fit("🚀 NitroScout Protocol Initiated...", style="bold green"))
@@ -151,21 +175,18 @@ async def main():
     # 1. Select platforms
     platforms = select_platforms()
 
-    # 2. Librarian: Update knowledge base
-    librarian = LibrarianAgent()
-    try:
-        await librarian.update_knowledge()
-    except Exception as e:
-        console.print(f"[bold red]❌ Librarian failed: {e}[/bold red]")
-
     today_str = datetime.now().strftime("%Y-%m-%d")
 
-    # 3. Run selected pipelines
+    # 2. Run selected scout pipelines
     if "hackernews" in platforms:
         await run_hackernews(today_str)
 
     if "reddit" in platforms:
         await run_reddit(today_str)
+
+    # 3. Campaign Manager (standalone or after scouts)
+    if "campaign_manager" in platforms:
+        await run_campaign_manager(today_str)
 
     console.print(Panel.fit("💤 Heartbeat cycle complete. Sleeping.", style="bold blue"))
 

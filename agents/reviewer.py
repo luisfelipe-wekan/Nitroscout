@@ -193,7 +193,7 @@ OUTPUT: Return ONLY a valid JSON array, no markdown fences. Example:
         if not self.model or not high_signal:
             return ""
 
-        # Build a rich context from the top leads
+        # Build a rich context from the top leads, including URLs for the LLM to link in opportunities
         lead_summaries = []
         for lead in high_signal[:15]:  # Cap at 15 to save tokens
             info = candidates.get(lead["title"], {})
@@ -204,6 +204,7 @@ OUTPUT: Return ONLY a valid JSON array, no markdown fences. Example:
             ])
             lead_summaries.append(
                 f"• [{lead['score']}/10] {lead['title']}\n"
+                f"  URL: {lead.get('url', 'N/A')}\n"
                 f"  Analysis: {lead['analysis']}\n"
                 f"  Top comments: {top_comments or 'N/A'}"
             )
@@ -315,6 +316,8 @@ Keep the tone sharp, confident, and data-driven. No fluff."""
             md_lines = [
                 f"# 🚀 NitroScout Intelligence Report",
                 f"**Date:** {date_str}  |  **Platform:** {platform}  |  **High-Signal Leads:** {len(leads)}",
+                "",
+                f"> Scouting community: **{platform}**",
                 "",
                 "---",
                 "",
