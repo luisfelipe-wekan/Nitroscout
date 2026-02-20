@@ -1,4 +1,31 @@
 {
+  "Show HN: Global Issue Memory MCP – Stack Overflow for Your Coding Assistant": {
+    "date": "2026-02-20T07:44:57Z",
+    "url": "https://news.ycombinator.com/item?id=47084943",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "Hey HN, I built Global Issue Memory (GIM), an open-source MCP server that lets AI coding assistants look up and share solutions to errors they encounter.<p>GitHub: <a href=\"https:&#x2F;&#x2F;github.com&#x2F;timho102003&#x2F;global-issue-memory\" rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;timho102003&#x2F;global-issue-memory</a>\nTry it: <a href=\"https:&#x2F;&#x2F;www.usegim.com&#x2F;docs&#x2F;getting-started\" rel=\"nofollow\">https:&#x2F;&#x2F;www.usegim.com&#x2F;docs&#x2F;getting-started</a> (free, no signup required to use the MCP tools)<p>How I got here:<p>I do a lot of vibe coding where I prompt Claude Code and let it run autonomously. I kept noticing the same pattern: the AI would hit a common error, spend 30K+ tokens doing web searches and trying failed fixes, and by the time it found the answer the context window was so bloated that output quality had degraded. I started calling this &quot;context rot.&quot;<p>My first attempt at fixing this was having the AI store solved issues in local markdown files and check them before debugging. It worked for my own projects but obviously didn&#x27;t scale.<p>Then I realized this is basically the same problem Stack Overflow solved for humans. The difference is AI assistants can&#x27;t efficiently parse discussion threads. They need structured, machine-readable fixes.<p>What it does:<p>GIM is an MCP server with five tools. When an AI hits an error, it calls gim_search_issues and gets back a verified fix in ~500 tokens instead of burning 30K on web searches. When the AI solves something new, it can submit the solution back via gim_submit_issue. Solutions are deduplicated and matched using semantic search.<p>Knowledge comes from two paths. First, a GitHub issue monitoring pipeline that crawls 60+ popular repos (LangChain, FastAPI, Next.js, etc.) and tracks closed issues with merged PRs linked. Those get automatically extracted, sanitized, and stored. Second, user contributions through the MCP tools, where an AI session solves something with a workaround and contributes it back.<p>Both paths feed into the same knowledge base, and here&#x27;s where it gets interesting. Say a user hits a bug and their workaround gets logged. Later, when the crawler picks up the maintainer&#x27;s official fix, it automatically identifies the overlap, merges, and deduplicates so the knowledge base stays clean and up to date. You get immediate workarounds to unblock you now, and the official fix once it lands.<p>Technical details:<p>Built with FastAPI, Qdrant for vector search, and Supabase. The MCP integration follows the Model Context Protocol spec so it works with any MCP-compatible client.<p>Privacy:<p>This was non-negotiable for me. If people are going to contribute solutions from their codebases, they need to trust that nothing sensitive leaks. Every submission passes through two layers of sanitization. First, regex pattern matching catches 20+ known secret types (API keys, tokens, connection strings) and scrubs PII. Second, an LLM-powered pass reviews the content in context to catch things that don&#x27;t match any regex pattern, like hardcoded credentials in unusual formats. And because no sanitization system can claim to catch everything, the entire codebase is open source so anyone can audit it and open a PR if they spot a gap.<p>Why open source and community matter here:<p>The value of GIM scales directly with contributions. One AI solves a bug, every AI learns the fix. That only works if people trust it enough to participate, which is why open source isn&#x27;t just a nice-to-have, it&#x27;s the foundation. I bootstrapped from 60+ repos to make it useful on day one, but the real potential is the community filling in the long tail of issues that no single team could ever catalog.<p>On the roadmap, I&#x27;m planning to add MCP tools that let Claude directly raise issues in upstream repos when it detects something that needs maintainer attention, and also let users add their own repos to be tracked by the crawler. So the coverage keeps growing with the community.<p>The whole thing is open source: <a href=\"https:&#x2F;&#x2F;github.com&#x2F;timho102003&#x2F;global-issue-memory\" rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;timho102003&#x2F;global-issue-memory</a><p>Happy to answer any questions about the architecture, the sanitization approach, or anything else.",
+    "comments": []
+  },
+  "Show HN: Mcpsec-A multi-agent SEC gate for MCP toolchains (scan →harden →rescan)": {
+    "date": "2026-02-19T21:41:57Z",
+    "url": "https://news.ycombinator.com/item?id=47079889",
+    "matched_keywords": [
+      "Model Context Protocol"
+    ],
+    "post": "Hi HN,<p>I built MCPSEC, a security gatekeeper for MCP (Model Context Protocol) toolchains.<p>It scans MCP configs, correlates vulnerability intel (OSV &#x2F; GHSA &#x2F; NVD), simulates tool abuse with an LLM-based probe agent, generates a policy + patch plan, applies hardening, then re-scans and gates CI on the final risk score.<p>The design is intentionally agentic:\n- Inventory agent: parses MCP configs\n- Intel agent: pulls vuln data (OSV &#x2F; GHSA &#x2F; NVD)\n- Probe agent (LLM, optional): generates adversarial tool abuse prompts\n- Policy agent (LLM, optional): turns findings into concrete config changes\n- Orchestrator: merges results, scores risk, writes reports, applies patches<p>You can run it locally as a CLI or drop it into CI as a GitHub Action:\n- It produces before&#x2F;apply&#x2F;after reports as artifacts\n- It can fail PRs if the final risk score stays above a threshold\n- Without an LLM token it works as a deterministic scanner; with one it becomes a true “security copilot”<p>Repo: <a href=\"https:&#x2F;&#x2F;github.com&#x2F;yuvrajgitwork&#x2F;MCP-toolchain-security-GK\" rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;yuvrajgitwork&#x2F;MCP-toolchain-security-GK</a>  \nDemo workflow: scan → apply → rescan → lower score<p>I built this because MCP toolchains are becoming powerful and over-privileged very quickly, and there’s basically no security gate for them yet.<p>Would love feedback from folks working in AI infra &#x2F; security.",
+    "comments": []
+  },
+  "Show HN: Messaging without accounts – continuity-authenticated instead": {
+    "date": "2026-02-19T20:09:22Z",
+    "url": "https://news.ycombinator.com/item?id=47078523",
+    "matched_keywords": [
+      "Model Context Protocol"
+    ],
+    "post": "Most messaging systems are account systems first and cryptosystems second.<p>I&#x27;ve been working on a prototype: https:&#x2F;&#x2F;aq-message.web.app<p>AQ is an experiment in removing accounts entirely.<p>There are no usernames, phone numbers, or platform identity objects. Instead, each relationship maintains its own evolving continuity chain. A message is accepted only if it cryptographically advances that chain according to deterministic rules.<p>The relay is untrusted by design. It stores ciphertext under per-relationship mailboxes. It can observe timing and volume, but it cannot decrypt content or produce forged messages that would be admitted by recipients.<p>Notable properties:\n• No global identity namespace\n• No server-issued credentials\n• Pairwise continuity instead of platform authentication\n• Deterministic replay and fork handling\n• Explicit recovery triggers on continuity gaps\n• No claim of metadata anonymity<p>This is a prototype, not a polished product.<p>I’d appreciate scrutiny on the protocol mechanics and threat model.<p>Technical overview:\nhttps:&#x2F;&#x2F;aq-message.web.app&#x2F;technical-overview",
+    "comments": []
+  },
   "Show HN: Claude Code for Mobile GUI Automation": {
     "date": "2026-02-19T12:44:18Z",
     "url": "https://news.ycombinator.com/item?id=47073173",
@@ -15,6 +42,91 @@
       "mcp-server"
     ],
     "post": "MCP servers let AI assistants (Claude, Copilot, Cursor) interact with databases, APIs, and filesystems. I&#x27;ve been reviewing a lot of these — both open-source and internal — and keep finding the same issues: hardcoded API keys, eval() on user input, SQL injection via string concatenation, wildcard permissions, disabled TLS.<p>So I built a static analysis scanner specifically for MCP servers. It runs 7 analyzers (secrets, static code, prompt injection, SQL&#x2F;command injection, permissions, network, dependencies) and takes ~45ms on a typical server.<p>Usage:<p><pre><code>  npx mcp-security-auditor scan .&#x2F;my-mcp-server\n</code></pre>\nNo account, runs locally. Outputs text, JSON, SARIF (for GitHub Security tab), HTML, or Markdown. Has a CI mode that exits non-zero above a severity threshold.<p>Available on both npm and PyPI. MIT licensed.<p>npm: <a href=\"https:&#x2F;&#x2F;www.npmjs.com&#x2F;package&#x2F;mcp-security-auditor\" rel=\"nofollow\">https:&#x2F;&#x2F;www.npmjs.com&#x2F;package&#x2F;mcp-security-auditor</a>\nPyPI: <a href=\"https:&#x2F;&#x2F;pypi.org&#x2F;project&#x2F;mcp-security-auditor&#x2F;\" rel=\"nofollow\">https:&#x2F;&#x2F;pypi.org&#x2F;project&#x2F;mcp-security-auditor&#x2F;</a>\nDev.to writeup with examples: <a href=\"https:&#x2F;&#x2F;dev.to&#x2F;prabhu_raja_fe2261464cb8e&#x2F;how-to-scan-your-mcp-servers-for-security-vulnerabilities-in-10-seconds-4m59\" rel=\"nofollow\">https:&#x2F;&#x2F;dev.to&#x2F;prabhu_raja_fe2261464cb8e&#x2F;how-to-scan-your-mc...</a><p>Would love feedback on detection patterns — there are definitely gaps I haven&#x27;t covered yet.",
+    "comments": []
+  },
+  "Show HN: One async PHP process serving web, REST API, and MCP for AI agents": {
+    "date": "2026-02-20T10:25:23Z",
+    "url": "https://news.ycombinator.com/item?id=47086117",
+    "matched_keywords": [
+      "MCP server"
+    ],
+    "post": "",
+    "comments": []
+  },
+  "Show HN: 17MB pronunciation scorer beats human experts at phoneme level": {
+    "date": "2026-02-20T09:57:37Z",
+    "url": "https://news.ycombinator.com/item?id=47085899",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "I built an English pronunciation assessment engine that fits in 17MB and runs in under 300ms on CPU.<p>Architecture: CTC forced alignment + GOP scoring + ensemble heads (MLP + XGBoost). No wav2vec2 or large self-supervised models — the entire pipeline uses a quantized NeMo Citrinet-256 as the acoustic backbone.<p>Benchmarked on speechocean762 (standard academic benchmark, 2500 utterances):\n- Phone accuracy (PCC): 0.580 — exceeds human inter-annotator agreement (0.555)\n- Sentence accuracy: 0.710 — exceeds human agreement (0.675)\n- Model is 70x smaller than wav2vec2-based SOTA<p>Trade-off: we&#x27;re ~10-15% below SOTA on raw accuracy. But for real-time feedback in language learning apps, the latency&#x2F;size trade-off is worth it.<p>Available as REST API, MCP server (for AI agents), and on Azure Marketplace.<p>Demo: <a href=\"https:&#x2F;&#x2F;huggingface.co&#x2F;spaces&#x2F;fabiosuizu&#x2F;pronunciation-assessment\" rel=\"nofollow\">https:&#x2F;&#x2F;huggingface.co&#x2F;spaces&#x2F;fabiosuizu&#x2F;pronunciation-asses...</a><p>Interested in feedback on the scoring approach and use cases people would find valuable.",
+    "comments": []
+  },
+  "Show HN: Inkwell-MCP – An MCP server for newsletter creators (open source)": {
+    "date": "2026-02-20T08:19:40Z",
+    "url": "https://news.ycombinator.com/item?id=47085202",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "",
+    "comments": [
+      {
+        "author": "lbostral",
+        "text": "I&#x27;ve been writing a weekly streaming industry newsletter for 68 editions. Most of my time wasn&#x27;t writing — it was information logistics: tracking sources, searching my own archive, remembering which expert I&#x27;d cited and when.\nBookmarking tools keep dying (RIP Pocket). If you write a newsletter, your sources are your most valuable asset and they live in tools you don&#x27;t control. I built an MCP server to own that layer — sources, notes, briefs, article tracking. SQLite-backed, your data stays yours.<p>The design principle: the MCP handles everything around the writing (collecting, organizing, retrieving). It never generates content.<p>Caveat: I daily-drive a more advanced version (Supabase, custom schema, 50 tools) to build two paid industry reports (20K+ datapoints, 172 companies, 34 countries). inkwell-mcp is the extracted portable core. It type-checks, but I haven&#x27;t battle-tested it with anyone else&#x27;s workflow yet. Issues welcome.\n25 years in streaming, built M6 Replay (50M+ users), several CTO roles.\nFull write-up: Full write-up: <a href=\"https:&#x2F;&#x2F;streamingradar.substack.com&#x2F;p&#x2F;my-newsletter-has-50-ai-tools-the\" rel=\"nofollow\">https:&#x2F;&#x2F;streamingradar.substack.com&#x2F;p&#x2F;my-newsletter-has-50-a...</a>\nThe newsletter: <a href=\"https:&#x2F;&#x2F;www.streaming-radar.com\" rel=\"nofollow\">https:&#x2F;&#x2F;www.streaming-radar.com</a>\nThe full MCP with 20K+ datapoints (bidirectional, 4 slots): <a href=\"https:&#x2F;&#x2F;lens.streaming-radar.com&#x2F;mcp\" rel=\"nofollow\">https:&#x2F;&#x2F;lens.streaming-radar.com&#x2F;mcp</a>\nHappy to answer questions about the architecture or MCP design decisions.",
+        "created_at": "2026-02-20T08:30:06.000Z"
+      }
+    ]
+  },
+  "Ask HN: What Is the Point of WebMCP?": {
+    "date": "2026-02-20T08:00:29Z",
+    "url": "https://news.ycombinator.com/item?id=47085076",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "So I have a question that should be simple, but apparently is not. I have Chrome Canary with WebMCP enabled. I have the Model Context Tool extension installed. I have a WebMCP-enabled test app running in it.<p>The only thing the extension offers is connecting to the Gemini API via an API token and using that as the driver for the WebMCP app. I don&#x27;t understand this use case. If I wanted my app to consume API tokens I would have directly coded interoperation with the major providers with one of the thousands libraries that di exactly that.<p>What I do have are subscriptions to OpenAI, Gemini, Claude, and GitHub Copilot. All the clients I use can connect to MCP servers. I thought: I have WebMCP enabled in Canary, so my browser will actually be an MCP server that gives access to the underlying WebMCP apps it is running. It turns out that no, of course that would be logical, but you can&#x27;t do that. Chrome exposes an MCP server, but it is only for controlling Chrome itself, like Playwright. It does not provide any bridging to WebMCP.<p>I then thought there would be an extension that does this, but the Chrome extension ecosystem is full of bullshit extensions from fraudsters who vibe-coded their way into trying to capitalize on the AI craze. There are no extensions for that. All of them want you to subscribe, or give them API tokens. Many of them have non-working websites. One option I see mentioned online is running Chrome in debug mode and exposing a remote debugging port. This is exactly what WebMCP was supposedly invented to avoid, so running your browser in a special way to expose it to complete control cannot be the right way to do this. I&#x27;m perfectly able to already do that without WebMCP.<p>Am I understanding it wrong? I understand the proposal is in its infancy, but I expect the <i>goal</i> of it to be at least clear. I don&#x27;t understand where it helps developers or users in any single way that wasn&#x27;t already available before.",
+    "comments": [
+      {
+        "author": "BlueHotDog2",
+        "text": "WebMCP is a protocol for exposing tools the AI can call from your running web app.\nthe point isn&#x27;t &quot;consume API tokens&quot;, it&#x27;s &quot;let the AI do stuff in your app&quot; (click buttons, fill forms, read DOM state). The Gemini integration is just the orchestrator for the example implementation. not the protocol",
+        "created_at": "2026-02-20T08:58:01.000Z"
+      },
+      {
+        "author": "curtisblaine",
+        "text": "Yes, but in practice, how do you connect AI to WebMCP? What is the point of a protocol that speaks MCP inside the browser if it&#x27;s not reachable outside the browser?",
+        "created_at": "2026-02-20T09:21:45.000Z"
+      },
+      {
+        "author": "ai_tools_daily",
+        "text": "The value of WebMCP becomes clearer when you think about non-developers trying to connect AI to their existing tools. Right now if a small business owner wants an AI agent to interact with their CRM or booking system, they need a developer to build custom integrations. A standardized protocol for web-based tool access could make that accessible to people without engineering teams. Whether WebMCP specifically is the right approach is debatable, but the problem it&#x27;s trying to solve is real.",
+        "created_at": "2026-02-20T10:53:58.000Z"
+      }
+    ]
+  },
+  "Show HN: Free web search for AI agents via MCP (You.com)": {
+    "date": "2026-02-20T01:41:56Z",
+    "url": "https://news.ycombinator.com/item?id=47082612",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "Hey HN — I’m a PM at You.com.<p>We just made our web search API free to use via MCP, so AI agents can call real-time web search without managing API keys or billing.<p>If you’re building with Cursor, Claude Desktop, OpenAI, or your own MCP-compatible agent, you can plug in our MCP server and get:\n • Real-time web results\n • Structured answers (news, web, RAG-friendly output)\n • No cost for search via MCP<p>Docs are here:\n<a href=\"https:&#x2F;&#x2F;docs.you.com&#x2F;developer-resources&#x2F;mcp-server\" rel=\"nofollow\">https:&#x2F;&#x2F;docs.you.com&#x2F;developer-resources&#x2F;mcp-server</a><p>Would love feedback from folks building agentic workflows:\n • What’s missing?\n • What would make this actually useful in production?\n • Where does search break in your current stack?",
+    "comments": []
+  },
+  "AI Skills Platform (Stealth) – Technical Co-Founder – Remote (US) – Equity": {
+    "date": "2026-02-20T00:12:07Z",
+    "url": "https://news.ycombinator.com/item?id=47081777",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "Building the &quot;Shopify for AI expertise&quot;. This is a platform where domain experts create AI skills once and deploy everywhere: web apps, Claude&#x2F;ChatGPT via MCP, APIs.\nWorking prototype with 40++ live skills, MCP server integration, streaming execution.<p>Looking for a technical co-founder to own the architecture and engineering. This is a ground-floor equity role, not a salaried position.<p>You: 4-8 years experience. Full-stack (Next.js&#x2F;React&#x2F;TypeScript preferred). Hands-on with LLM APIs (Anthropic, OpenAI). You&#x27;ve shipped AI-native products to real users. You care about system design — multi-tenant SaaS, token-metered billing, marketplace dynamics. You want to build a company, not just write code.<p>Us: Serial founder (4 companies, 3 acquired). Invented WinSock. Founding member of Intel&#x27;s AI Group ($1B+ revenue). Business co-founder with enterprise GTM and $1.2B revenue program experience from Intel.<p>You&#x27;d be building at the intersection of every major AI platform — Anthropic, OpenAI, Gemini — not locked into one ecosystem.<p>martin.hall.kp@gmail.com\nhttps:&#x2F;&#x2F;calendly.com&#x2F;martin-hall-kp&#x2F;co-founder-chat",
+    "comments": []
+  },
+  "Show HN:PolyMCP Python Tools with Autonomous Agents": {
+    "date": "2026-02-19T22:07:49Z",
+    "url": "https://news.ycombinator.com/item?id=47080258",
+    "matched_keywords": [
+      "mcp-server"
+    ],
+    "post": "PolyMCP is a framework that exposes functions (in Python or TypeScript) as MCP tools, serves them through standardized MCP servers, and orchestrates them with autonomous agents capable of planning and executing complex workflows.<p>With PolyMCP, you can:\n 1. Expose existing functions (in Python or TypeScript) as MCP tools without rewriting the code.\n 2. Use the PolyClaw agent to dynamically orchestrate tools, break down complex tasks, and adapt to failures, all running in isolated environments via Docker.<p>PolyMCP is ideal for enterprise automation, DevOps, data pipelines, and internal tool orchestration.<p>GitHub Repo: https:&#x2F;&#x2F;github.com&#x2F;poly-mcp&#x2F;PolyMCP",
     "comments": []
   },
   "Show HN: Ghost OS – Let AI agents use your Mac, not just the terminal": {
@@ -48,18 +160,7 @@
       "mcp-server"
     ],
     "post": "Matrix OS is an AI-native operating system: self-creating, self-healing, and self-expanding.<p>The Claude Agent SDK is the literal kernel:<p><pre><code>  CPU        =&gt; Claude Opus 4.6                                                                             \n  RAM        =&gt; Context window (1M tokens)                                                                  \n  Kernel     =&gt; Main agent + 26 IPC tools                                                                   \n  Processes  =&gt; 5 sub-agents\n  Disk       =&gt; ~&#x2F;apps, ~&#x2F;data, ~&#x2F;system\n  Syscalls   =&gt; Read, Write, Edit, Bash\n  Drivers    =&gt; MCP servers\n  IPC        =&gt; File coordination\n</code></pre>\nBreak something, the healer agent repairs it. Need a new capability, the OS writes its own agents and skills. Describe an app, it appears as a file you own.<p>The bigger vision is Web 4: OS + messaging + social + AI + identity, unified under one federated handle via Matrix protocol.<p>GitHub: github.com&#x2F;HamedMP&#x2F;matrix-os\nWhitepaper: matrix-os.com&#x2F;whitepaper<p>Happy to answer questions about the architecture.",
-    "comments": [
-      {
-        "author": "cranberryturkey",
-        "text": "The kernel metaphor is interesting but I think the hard questions are in the gaps between the metaphor and reality.<p>Real kernels have well-defined failure modes. Process crashes, OOM kills, filesystem corruption — there are decades of battle-tested recovery patterns. When your &quot;kernel&quot; is a language model, failure is probabilistic and often silent. The healer agent can fix a broken file, but can it detect when a sub-agent made a subtly wrong architectural decision that will cascade later?<p>The 5 sub-agent model maps loosely to microservices, but coordination is the part that kills you. How do you handle conflicting state when two sub-agents modify overlapping resources? File-based IPC is simple but gives you no atomicity guarantees.<p>Genuine question: what does the failure rate look like in practice? When you say &quot;self-healing,&quot; is that recovering from syntax errors in generated code, or recovering from semantic failures where the agent did something technically valid but wrong?",
-        "created_at": "2026-02-19T19:32:12.000Z"
-      },
-      {
-        "author": "hamedmp",
-        "text": "super valid concerns, but i believe all of them fixable.<p>true that llms are stochastic by nature, but with models like opus 4.5&#x2F;4.6, the quality is just another magnitude. and all these can have live tests, giving feedback for the code written.<p>the &quot;kernel&quot; here is merely an analogy, just like how we don&#x27;t care about lsp and all the details in old ide&#x27;s, and just use claude code and such, the ai native os will abstract away all these details, like kernel, ...<p>the failure rate will depend on what type of projects you&#x27;re asking and how much you&#x27;re customizing your os. here is where the tests needs to be in place (and the healer jumps to fix the config format,...)",
-        "created_at": "2026-02-19T19:40:45.000Z"
-      }
-    ]
+    "comments": []
   },
   "Show HN: Prodlint – A linter that catches what AI coding tools miss": {
     "date": "2026-02-19T18:44:02Z",
@@ -202,140 +303,6 @@
         "author": "nolpak14",
         "text": "Hey HN, I&#x27;m the author.<p>Some background: I&#x27;ve been working on tooling for UCP (Universal Commerce Protocol) for a few months. UCP is the open standard Google and Shopify announced in January - it lets AI agents discover stores via &#x2F;.well-known&#x2F;ucp and complete purchases through standardized APIs.<p>I built Agorio because when I tried to build a shopping agent against the UCP spec, I had to:<p>1. Write my own profile parser that handles both capability formats in the spec\n2. Build a checkout state machine (incomplete → requires_escalation → ready_for_complete → completed)\n3. Create a mock merchant from scratch just to test against\n4. Wire up LLM function calling with JSON Schema tool definitions<p>None of this was commerce-specific - it was all protocol plumbing. So I extracted it into a reusable SDK.<p>The key abstractions:<p>- LlmAdapter - two methods: chat(messages, tools) and modelName. Any LLM with function calling works. The Gemini adapter is ~100 lines.\n- ShoppingAgent - takes an LlmAdapter, runs plan-act-observe with 12 tools. Manages cart state, checkout sessions, order history.\n- UcpClient - fetches &#x2F;.well-known&#x2F;ucp, normalizes capabilities, resolves REST&#x2F;MCP&#x2F;A2A transports.\n- MockMerchant - full Express server with UCP profile, OpenAPI schema, 10 products, checkout flow, order tracking. Supports chaos testing with configurable latency and error rates.<p>Technical choices I&#x27;d like feedback on:<p>- Is a plan-act-observe loop the right pattern, or should I support ReAct &#x2F; tree-of-thought?\n- Currently UCP-only. ACP client is planned for v0.2. Should I prioritize that?\n- The LlmAdapter interface is deliberately minimal. Too minimal?<p>Would love feedback from anyone building with LLM function calling or commerce APIs. Happy to talk UCP&#x2F;ACP protocol details.",
         "created_at": "2026-02-19T11:49:06.000Z"
-      }
-    ]
-  },
-  "Show HN: Napkin – desktop app for quick diagrams, with MCP support": {
-    "date": "2026-02-19T02:26:52Z",
-    "url": "https://news.ycombinator.com/item?id=47069152",
-    "matched_keywords": [
-      "mcp-server"
-    ],
-    "post": "Napkin is a simple app for quick diagrams, that works offline. Drawings are saved locally as JSON files with version\nhistory support. It also has an MCP server, so you can use AI tools to produce drawings.",
-    "comments": []
-  },
-  "Show HN: Extra-steps.dev – AI hype mapped to CS primitives": {
-    "date": "2026-02-19T02:18:36Z",
-    "url": "https://news.ycombinator.com/item?id=47069100",
-    "matched_keywords": [
-      "MCP server"
-    ],
-    "post": "I built a reference site that maps AI marketing buzzwords to the CS primitives underneath them. Every entry follows the same format: &quot;X is just Y with extra steps.&quot;<p>MCP? JSON-RPC over stdio. Agents? A while loop with an LLM call. RAG? A search index + string concatenation. Prompt engineering? natural language + markdown<p>The site has an origins section for buzzwords that already graduated — Docker (cgroups + namespaces), Kubernetes (reconciliation loops watching YAML), Serverless\n  (someone else&#x27;s process on someone else&#x27;s computer). And of course, BrandonM&#x27;s 2007 comment on the Dropbox YC demo.<p>Each entry has expandable pseudocode on the index page, detailed breakdowns with citations on the detail pages.<p>The motivation: I keep having conversations at work where a product executive suggests that we &quot;orchestrate APIs using MCP&quot; or asks about implementing &quot;agentic memory&quot; in our web apps and the fastest path to a productive conversation is showing them the code underneath the buzzword. I wanted a community-based reference site like caniuse or mdn that I loved when learning to code. I couldn&#x27;t find one, so I built one.<p><pre><code>  14 entries so far. Static Astro site, open source, PRs welcome.\n\n  https:&#x2F;&#x2F;extra-steps.dev</code></pre>",
-    "comments": [
-      {
-        "author": "maxxmini",
-        "text": "Interesting approach! How does this handle rate limiting and token costs at scale? Would love to see benchmarks.",
-        "created_at": "2026-02-19T02:20:19.000Z"
-      },
-      {
-        "author": "funemployed",
-        "text": "Exactly",
-        "created_at": "2026-02-19T02:31:18.000Z"
-      },
-      {
-        "author": "amabito",
-        "text": "Nice reference. If agents are essentially “a while loop with an LLM call,”\nthen one missing category might be execution control.<p>In distributed systems we rarely let loops run unbounded — we add\nbudgets, backoff, circuit breakers, etc. With agents, it’s interesting that\nmost frameworks focus on observability (traces, logs) but not on hard\ncontainment of the loop itself.<p>If you were extending the mapping, would “agent budget limits” fit better\nas a rate limiter, a circuit breaker, or something closer to a bounded\nwork queue?",
-        "created_at": "2026-02-19T11:27:20.000Z"
-      }
-    ]
-  },
-  "I made $15K/month at 13. Built a YC startup at 20. Still looking for my person": {
-    "date": "2026-02-19T00:38:45Z",
-    "url": "https://news.ycombinator.com/item?id=47068442",
-    "matched_keywords": [
-      "mcp-server"
-    ],
-    "post": "When I was 13, I created a fully modded Minecraft server doing over $10K a month..\nNot birthday money, actual revenue, actual operations, actual problems to solve every day. I built the whole best French MC server alone because I was completely obsessed. It was a fcking amazing experience<p>At 20, I co-founded a startup, we had 40 employees, and we went through Y Combinator. It was real scale, real chaos, and it taught me a lot in two years..<p>Around 23, I started another one. Different industry, different vibe, but genuinely one of the best adventures I’ve had. The thing is, in parallel I never stopped freelancing. \nI’m French, I like my freedom, and high-ticket freelance kept me financially untouchable while I was building a startup. That balance kept me sane.\nThat’s basically been my life since I was a kid. Build things, fund it myself, answer to no one.\nHere’s what I’ve realized though: I can build almost anything… But I’ve always done it alone, not because I’m some lone wolf type, but because I’m wired in a way that makes it hard to find the right person, but because I scan people before I trust them, I move fast and I genuinely can’t stand people who talk more than they ship..\nI’m looking for someone crazy enough to build things with me.\nNot someone like me, but more someone who has a scar I don’t have yet, someone who sees what I miss, someone who reads this and just gets it, not because you’ve had the same path, but because you recognize the way of thinking..<p>I’m based in the south of France, and it doesn’t matter where you are.\nIf that’s you, please reach out :)",
-    "comments": [
-      {
-        "author": "lout332",
-        "text": "lets meet <a href=\"https:&#x2F;&#x2F;luisfernandoyt.makestudio.app&#x2F;\" rel=\"nofollow\">https:&#x2F;&#x2F;luisfernandoyt.makestudio.app&#x2F;</a>",
-        "created_at": "2026-02-19T00:45:22.000Z"
-      },
-      {
-        "author": "HNMaxHN",
-        "text": "reaching out, let&#x27;s meet ;)",
-        "created_at": "2026-02-19T01:01:32.000Z"
-      },
-      {
-        "author": "Cluelessidoit",
-        "text": "Good for you. It’s proof anything can make income",
-        "created_at": "2026-02-19T03:26:49.000Z"
-      }
-    ]
-  },
-  "Ask HN: In Cursor/agents, do plugins hide MCP tools from the main agent?": {
-    "date": "2026-02-18T22:55:53Z",
-    "url": "https://news.ycombinator.com/item?id=47067558",
-    "matched_keywords": [
-      "mcp-server"
-    ],
-    "post": "Quick architecture question.<p>When using MCP servers directly in Cursor, the agent seems to see all tools at the same level.<p>But when using a plugin&#x2F;extension that internally connects to MCP servers, does the main agent:<p>see only the plugin as a single tool and delegate to a sub-agent inside it,\nor<p>still see every underlying MCP tool individually?<p>In other words: do plugins act as a tool abstraction boundary, or just a packaging&#x2F;install mechanism?",
-    "comments": [
-      {
-        "author": "beratbozkurt0",
-        "text": "I&#x27;ve recently started using Codex and installed Figma MCP. The outputs were really good. I achieved a 90% success rate, and I fixed the rest myself.",
-        "created_at": "2026-02-19T00:06:27.000Z"
-      },
-      {
-        "author": "allinonetools_",
-        "text": "From what I have seen, plugins usually act as an abstraction layer — the main agent interacts with the plugin, not each underlying MCP tool directly. It keeps things cleaner and easier to manage, especially when multiple tools are involved.",
-        "created_at": "2026-02-19T16:35:56.000Z"
-      },
-      {
-        "author": "hifathom",
-        "text": "I built a stdio-based MCP multiplexer (mcp-hub) that connects to multiple backend MCP servers and exposes them as a single server. From the host agent&#x27;s perspective, all tools are flattened into one namespace with server-name prefixes — telegram__send_message, linkedin__get_profile, etc. The agent doesn&#x27;t know or care which backend handles each tool.<p>To answer the question directly: it depends on the implementation. In Cursor&#x27;s case, MCP servers are registered individually and the agent sees all tools at the same level. A multiplexer like mine acts as an abstraction boundary — the agent sees one MCP connection, but tools from N backends are available through it. The tradeoff is namespace management vs. connection simplicity. With 10+ MCP servers, a single gateway is significantly easier to configure and debug.",
-        "created_at": "2026-02-19T17:53:31.000Z"
-      }
-    ]
-  },
-  "Project Paperclip. The time has come": {
-    "date": "2026-02-18T21:25:19Z",
-    "url": "https://news.ycombinator.com/item?id=47066648",
-    "matched_keywords": [
-      "mcp-server"
-    ],
-    "post": "Long rumored that the world would end due to a goal of &quot;maximizing paperclips&quot;\nit is time to start. Every good world-ending idea needs a plan.<p>Given an infinite number of paperclips what are the design constraints?<p>Paperclips designs are the &quot;string theory&quot; of physical construction.<p>Ideas in 1 dimension<p>Obviously you could make a single one-dimensional line of paperclips.\nThis raises the question of multiples sizes of paperclips.\nCan we make an ever smaller paperclip progression in an interval?<p>Ideas in 2 dimensions<p>One could make a 2-dimensional regular fabric of paperclips.\nThe 2D fabric could be made from regular shapes like hexagons instead.\nHow many ways can a plane be tiled, especially if we vary sizes<p>Ideas in 3 dimensions<p>One could make a 3 dimensional solid of paperclips.\nThe 2D hexagons could be extended in 3D forming a &quot;bee hive&quot; effect.\nA 3D paperclip array could have holes and voids forming structures.\nIn 3D the paperclip can vary in size and shape. Bent paperclips arise.<p>Paperclips don&#x27;t need to be made of steel. \nSuppose some are non-conductive so we can form circuits.\nA non-uniform paperclips could, for example, be a capacitor.<p>Are there interesting &quot;vibration modes&quot;, like waves in a sea?<p>Ideas in 4 dimensions (varying in time).<p>Paperclips can move independently.\nOne could clearly make &quot;paperclip wheels&quot;.\nCan we build a timepiece in paperclips?<p>Tools.<p>We need to make a solid modeling tool to handle paperclips.\nWe need an MCP server to allow the AI to use the tool.\nWe need a trained AI to &quot;think in paperclips&quot;.\nWe need &quot;alignment training&quot; so the results fit our needs.<p>Further thoughts.<p>Suppose we go to the moon and find the moon has ideal paperclip material.\nMight it be efficient to construct a single paperclip factory?\nThen everything has a common structure and is easily maintained and repaired.<p>Contribute!",
-    "comments": [
-      {
-        "author": "bell-cot",
-        "text": "Too easily confused with <a href=\"https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Operation_paperclip\" rel=\"nofollow\">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Operation_paperclip</a> - especially when you start talking about going to the moon.",
-        "created_at": "2026-02-18T21:38:18.000Z"
-      },
-      {
-        "author": "daly",
-        "text": "Oh cool. Thanks for the pointer!",
-        "created_at": "2026-02-18T23:04:32.000Z"
-      }
-    ]
-  },
-  "Show HN: MCPShield – Supply chain security scanner for MCP servers": {
-    "date": "2026-02-18T21:01:09Z",
-    "url": "https://news.ycombinator.com/item?id=47066315",
-    "matched_keywords": [
-      "mcp-server"
-    ],
-    "post": "",
-    "comments": [
-      {
-        "author": "ethanmizrahi",
-        "text": "We built MCPShield because we kept seeing the same problems in MCP configs:<p>Typosquat packages that steal credentials (we found mcp-servr-github harvesting env vars)\nKnown CVEs in Anthropic&#x27;s own Git MCP server (CVE-2025-68145, RCE via prompt injection)\nHardcoded database passwords visible to LLMs in tool metadata\nAgents with access to ~&#x2F;.ssh and ~&#x2F;.aws<p>The MCP ecosystem is following the same trajectory as npm&#x2F;PyPI — rapid adoption with minimal vetting. 88% of orgs deploying AI agents have had security incidents.\nMCPShield scans your claude_desktop_config.json (or Cursor&#x2F;VS Code config) and catches these before deployment. Zero dependencies, works offline, CI&#x2F;CD-ready.\nWe built this in the open because MCP security is a collective action problem. PRs and CVE reports welcome.",
-        "created_at": "2026-02-18T21:05:26.000Z"
-      }
-    ]
-  },
-  "Show HN: PatchworkMCP – Agents report what's missing from your MCP server": {
-    "date": "2026-02-18T20:27:57Z",
-    "url": "https://news.ycombinator.com/item?id=47065941",
-    "matched_keywords": [
-      "mcp-server"
-    ],
-    "post": "",
-    "comments": [
-      {
-        "author": "keytonw",
-        "text": "I build MCP servers for a living and kept guessing at what tools to add next. So I tried something: what if the agents told me?<p>PatchworkMCP is a feedback tool you drop into any MCP server (Python, TypeScript, Go, Rust — one file each). When an agent hits a wall — missing tool, incomplete data, wrong format — it calls the feedback tool with structured details about what it needed, what it tried, and what would have helped.<p>The feedback goes to a FastAPI sidecar with a review dashboard. You can browse the gaps, add notes, and click &quot;Draft PR&quot; — it reads your GitHub repo, sends the feedback + code context to an LLM, and opens a draft pull request.<p>The interesting finding: agents actually give surprisingly specific feedback. When I wired this into an AI cost management MCP server, Claude reported a missing `search_costs_by_context` tool, described the exact input schema it wanted (context key-value pairs with AND logic, combined with standard filters, paginated results), and that became a working tool within minutes.<p>The whole sidecar is one Python file. No Docker, no build step. The drop-ins are one file each with zero deps beyond the MCP SDK + an HTTP client.<p>This is early — right now it&#x27;s a developer tool for when you&#x27;re actively building and need fast signal. The longer-term idea is a self-monitoring system: feedback accumulates, gets deduplicated and clustered, and the system proposes changes when confidence is high. But today it&#x27;s just capture → review → draft PR.<p>Curious if others building MCP servers have found good ways to figure out what tools are actually needed vs. what you think is needed.",
-        "created_at": "2026-02-18T20:27:57.000Z"
       }
     ]
   }

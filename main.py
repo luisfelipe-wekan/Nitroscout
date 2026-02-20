@@ -13,6 +13,7 @@ from rich.panel import Panel
 
 # Import Agents
 from agents.scout import HackerNewsScout
+from agents.reddit_scout import RedditScout
 from agents.librarian import LibrarianAgent
 from agents.reviewer import ReviewerAgent
 
@@ -31,47 +32,103 @@ async def main():
     except Exception as e:
         console.print(f"[bold red]❌ Librarian failed: {e}[/bold red]")
 
-    # 2. Scout: Fetch real HN Data
-    scout = HackerNewsScout()
-    leads = scout.scan(hours_back=24)
-    
-    if not leads:
-        console.print("[yellow]😴 No new activity found. Shutting down.[/yellow]")
-        return
-
-    # 3. Save Findings to JSON
     today_str = datetime.now().strftime("%Y-%m-%d")
-    save_dir = Path("agents/scouts/hackernews_posts")
-    save_dir.mkdir(parents=True, exist_ok=True)
-    json_filename = save_dir / f"{today_str}_HN_post.json"
-    report_filename = save_dir / f"{today_str}_HN_report.md"
-    
-    # Structure data: Keys are titles
-    json_data = {}
-    for lead in leads:
-        json_data[lead["title"]] = {
-            "date": lead["date"],
-            "url": lead["url"],
-            "matched_keywords": [lead["keyword_found"]],
-            "post": lead["text"],
-            "comments": lead["comments"]
-        }
-    
-    with open(json_filename, "w", encoding="utf-8") as f:
-        json.dump(json_data, f, indent=2, ensure_ascii=False)
-    
-    console.print(f"[bold green]💾 Saved all findings to: {json_filename}[/bold green]")
 
-    # 4. Reviewer: Analysis and selection
-    console.print(Panel("🧠 Analyzing leads for high-signal matches...", style="bold magenta"))
-    reviewer = ReviewerAgent(str(json_filename))
-    high_signal_leads = reviewer.analyze_leads()
+    # ╔══════════════════════════════════════════╗
+    # ║  HACKER NEWS PIPELINE                    ║
+    # ╚══════════════════════════════════════════╝
+    console.print(Panel("📰 Phase 1: Hacker News", style="bold cyan"))
     
-    # Display and Save the beautiful report
-    reviewer.display_report(high_signal_leads, output_path=str(report_filename))
+    scout = HackerNewsScout()
+    hn_leads = scout.scan(hours_back=24)
+    
+    if hn_leads:
+        hn_dir = Path("agents/scouts/hackernews_posts")
+        hn_dir.mkdir(parents=True, exist_ok=True)
+        hn_json = hn_dir / f"{today_str}_HN_post.json"
+        hn_report = hn_dir / f"{today_str}_HN_report.md"
+        
+        hn_data = {}
+        for lead in hn_leads:
+            hn_data[lead["title"]] = {
+                "date": lead["date"],
+                "url": lead["url"],
+                "matched_keywords": [lead["keyword_found"]],
+                "post": lead["text"],
+                "comments": lead["comments"]
+            }
+        
+        with open(hn_json, "w", encoding="utf-8") as f:
+            json.dump(hn_data, f, indent=2, ensure_ascii=False)
+        
+        console.print(f"[bold green]💾 HN data saved to: {hn_json}[/bold green]")
 
-    console.print(f"\n[cyan]🎯 Total High-Signal Leads found: {len(high_signal_leads)}[/cyan]")
-    console.print("[bold blue]💤 Heartbeat cycle complete. Sleeping.[/bold blue]")
+        console.print(Panel("🧠 Analyzing HN leads...", style="bold magenta"))
+        reviewer = ReviewerAgent(str(hn_json))
+        hn_high_signal = reviewer.analyze_leads()
+        reviewer.display_report(hn_high_signal, output_path=str(hn_report))
+        console.print(f"[cyan]🎯 HN High-Signal: {len(hn_high_signal)} leads[/cyan]")
+    else:
+        console.print("[yellow]😴 No HN activity found.[/yellow]")
+
+    # ╔══════════════════════════════════════════╗
+    # ║  REDDIT PIPELINE (Two-Phase)             ║
+    # ╚══════════════════════════════════════════╝
+    console.print(Panel("🟠 Phase 2: Reddit", style="bold yellow"))
+    
+    reddit_scout = RedditScout(subreddits=["mcp"])
+    reddit_leads = reddit_scout.scan(limit=50, sort="hot")
+    
+    if reddit_leads:
+        reddit_dir = Path("agents/scouts/reddit_posts")
+        reddit_dir.mkdir(parents=True, exist_ok=True)
+        reddit_json = reddit_dir / f"{today_str}_Reddit_post.json"
+        reddit_report = reddit_dir / f"{today_str}_Reddit_report.md"
+
+        # Phase 1 save: posts WITHOUT comments (lightweight)
+        reddit_data = {}
+        for lead in reddit_leads:
+            reddit_data[lead["title"]] = {
+                "date": lead["date"],
+                "url": lead["url"],
+                "subreddit": lead["subreddit"],
+                "reddit_id": lead["reddit_id"],
+                "upvotes": lead["upvotes"],
+                "post": lead["text"],
+                "comment_count": lead["comment_count"],
+                "comments": []  # Empty for now
+            }
+
+        # Phase 1 analysis: LLM scores posts based on titles + snippets
+        with open(reddit_json, "w", encoding="utf-8") as f:
+            json.dump(reddit_data, f, indent=2, ensure_ascii=False)
+
+        console.print(f"[bold green]💾 Reddit data saved to: {reddit_json}[/bold green]")
+
+        console.print(Panel("🧠 Analyzing Reddit leads...", style="bold magenta"))
+        reviewer = ReviewerAgent(str(reddit_json))
+        reddit_high_signal = reviewer.analyze_leads()
+
+        # Phase 2: Fetch comments ONLY for high-signal posts
+        if reddit_high_signal:
+            high_signal_titles = [lead["title"] for lead in reddit_high_signal]
+            console.print(f"[cyan]🔍 Fetching comments for {len(high_signal_titles)} high-signal posts...[/cyan]")
+            reddit_scout.enrich_leads(reddit_leads, high_signal_titles)
+            
+            # Update JSON with comments
+            for lead in reddit_leads:
+                if lead["title"] in reddit_data:
+                    reddit_data[lead["title"]]["comments"] = lead["comments"]
+
+            with open(reddit_json, "w", encoding="utf-8") as f:
+                json.dump(reddit_data, f, indent=2, ensure_ascii=False)
+
+        reviewer.display_report(reddit_high_signal, output_path=str(reddit_report))
+        console.print(f"[cyan]🎯 Reddit High-Signal: {len(reddit_high_signal)} leads[/cyan]")
+    else:
+        console.print("[yellow]😴 No Reddit activity found.[/yellow]")
+
+    console.print(Panel.fit("💤 Heartbeat cycle complete. Sleeping.", style="bold blue"))
 
 if __name__ == "__main__":
     asyncio.run(main())
