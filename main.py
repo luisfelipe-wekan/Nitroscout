@@ -95,15 +95,55 @@ async def run_reddit(today_str: str):
     console.print(Panel("🟠 Reddit Pipeline", style="bold yellow"))
 
     reddit_scout = RedditScout(subreddits=[
-        "mcp",           # Core: Model Context Protocol community
-        "LocalLLaMA",    # Largest AI tools community
-        "ChatGPTCoding",  # Devs using LLMs in coding workflows
-        "ClaudeAI",      # Claude-specific — MCP is its native protocol
-        "AIAgents",      # AI agent builders — prime NitroStack audience
-        "typescript",    # TypeScript devs — NitroStack's language
-        "node",          # Node.js ecosystem — NitroStack runtime
-        "artificial",    # General AI with technical depth
+        # — MCP & Agentic core —
+        "mcp",              # Model Context Protocol community
+        "AI_Agents",        # AI agent builders — prime NitroStack audience
+        "AutoGPT",          # Agent automation crowd
+        "LLMDevs",          # LLM developers
+        "LangChain",        # Agent framework users
+        "RAG",              # Retrieval-Augmented Generation
+        "aiengineering",    # Applied AI engineering
+
+        # — AI / LLM general —
+        "LocalLLaMA",           # Largest self-hosted AI community
+        "LocalLLM",             # Local LLM runners
+        "ChatGPT",              # Broad LLM user base
+        "ClaudeAI",             # Claude-specific — MCP is its native protocol
+        "OpenAI",               # OpenAI users / devs
+        "OpenAIDev",            # OpenAI API developers
+        "ArtificialIntelligence", # General AI
+        "artificial",           # General AI with technical depth
+        "MachineLearning",      # ML research & application
+        "LanguageModels",       # LLM-focused discussions
+        "LLM",                  # LLM general
+
+        # — TypeScript / Node / Web dev —
+        "typescript",       # NitroStack's native language
+        "node",             # Node.js ecosystem
+        "nextjs",           # Next.js / full-stack TS devs
+        "webdev",           # Web developers
+        "Python",           # Python ecosystem (NitroStack Python SDK)
+
+        # — Infrastructure / DevOps —
+        "softwarearchitecture", # Architecture discussions
+        "devops",               # DevOps engineers
+        "docker",               # Containerization
+        "kubernetes",           # Orchestration
+        "selfhosted",           # Self-hosted tooling
+        "homelab",              # Home lab / self-hosted
+
+        # — Startup / Indie dev —
+        "startups",         # Startup founders
+        "indiehackers",     # Indie builders
+        "SideProject",      # Side project launchers
+        "Entrepreneur",     # Entrepreneurship
+
+        # — Developer career / community —
+        "ExperiencedDevs",      # Senior devs — architecture discussions
+        "cscareerquestions",    # Dev career community
+        "StableDiffusion",      # AI image / adjacent AI community
     ])
+
     leads = reddit_scout.scan(limit=50, sort="hot")
 
     if not leads:
