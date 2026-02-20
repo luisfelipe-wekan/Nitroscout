@@ -83,8 +83,7 @@ async def run_hackernews(today_str: str):
 
     reviewer = ReviewerAgent(str(json_file))
     high_signal = reviewer.analyze_leads()
-    reviewer.display_report(high_signal, output_path=str(report_file))
-    console.print(f"[cyan]🎯 HN High-Signal leads found: {len(high_signal)}[/cyan]")
+    reviewer.display_report(high_signal, output_path=str(report_file), platform="Hacker News")
 
 
 async def run_reddit(today_str: str):
@@ -140,7 +139,8 @@ async def run_reddit(today_str: str):
         with open(json_file, "w", encoding="utf-8") as f:
             json.dump(reddit_data, f, indent=2, ensure_ascii=False)
 
-    reviewer.display_report(high_signal, output_path=str(report_file))
+    subs = ', r/'.join(reddit_scout.subreddits)
+    reviewer.display_report(high_signal, output_path=str(report_file), platform=f"Reddit r/{subs}")
     console.print(f"[cyan]🎯 Reddit High-Signal leads found: {len(high_signal)}[/cyan]")
 
 

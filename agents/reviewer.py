@@ -274,7 +274,7 @@ Keep the tone sharp, confident, and data-driven. No fluff."""
         self._knowledge_base = knowledge_base  # Store for insights generation
         return high_signal
 
-    def display_report(self, leads: List[Dict], output_path: Optional[str] = None):
+    def display_report(self, leads: List[Dict], output_path: Optional[str] = None, platform: str = "Hacker News"):
         """Prints a rich table and saves a full Markdown report."""
         if not leads:
             console.print("[yellow]⚠️ No high-signal leads identified in this batch.[/yellow]")
@@ -314,7 +314,7 @@ Keep the tone sharp, confident, and data-driven. No fluff."""
             date_str = datetime.now().strftime("%B %d, %Y – %H:%M")
             md_lines = [
                 f"# 🚀 NitroScout Intelligence Report",
-                f"**Date:** {date_str}  |  **Platform:** Hacker News  |  **High-Signal Leads:** {len(leads)}",
+                f"**Date:** {date_str}  |  **Platform:** {platform}  |  **High-Signal Leads:** {len(leads)}",
                 "",
                 "---",
                 "",
