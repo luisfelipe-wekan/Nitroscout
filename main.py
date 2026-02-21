@@ -86,7 +86,7 @@ async def run_hackernews(today_str: str):
     console.print(f"[bold green]💾 HN data saved to: {json_file}[/bold green]")
 
     reviewer = ReviewerAgent(str(json_file))
-    high_signal = reviewer.analyze_leads()
+    high_signal = reviewer.analyze_leads(output_dir=save_dir)
     reviewer.display_report(high_signal, output_path=str(report_file), platform="Hacker News")
 
 
@@ -160,9 +160,9 @@ async def run_reddit(today_str: str):
         json.dump(reddit_data, f, indent=2, ensure_ascii=False)
     console.print(f"[bold green]💾 Reddit data saved to: {json_file}[/bold green]")
 
-    # LLM scoring pass (batch, 1 API call)
+    # LLM scoring pass (per-subreddit mini-batches)
     reviewer = ReviewerAgent(str(json_file))
-    high_signal = reviewer.analyze_leads()
+    high_signal = reviewer.analyze_leads(output_dir=save_dir)
 
     # Phase 2: Fetch comments only for high-signal posts
     if high_signal:

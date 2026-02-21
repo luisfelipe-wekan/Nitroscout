@@ -114,15 +114,12 @@ class ReviewerAgent:
                     break
         return None
 
-    def _batch_analyze(self, candidates: Dict, knowledge_context: str) -> List[Dict]:
-        """Sends ALL candidates in a SINGLE API call. Returns a list of scored results."""
-        if not self.model:
-            return []
-
+    def _analyze_group(self, group: Dict, knowledge_context: str) -> List[Dict]:
+        """Sends ONE subreddit's candidates to the LLM. Returns scored list."""
+        titles = list(group.keys())
         post_list = []
-        titles = list(candidates.keys())
         for i, title in enumerate(titles, 1):
-            info = candidates[title]
+            info = group[title]
             snippet = info.get("post", "")[:300] or "[No post body — comments-only thread]"
             comment_count = len(info.get("comments", []))
             post_list.append(f"{i}. TITLE: {title}\n   SNIPPET: {snippet}\n   COMMENTS: {comment_count}")
@@ -172,18 +169,75 @@ OUTPUT: Return ONLY a valid JSON array, no markdown fences. Example:
                 idx = item.get("index", 0) - 1
                 if 0 <= idx < len(titles):
                     title = titles[idx]
-                    info = candidates[title]
+                    info = group[title]
                     scored.append({
                         "title": title,
                         "url": info.get("url"),
+                        "subreddit": info.get("subreddit", ""),
                         "score": int(item.get("score", 0)),
                         "analysis": item.get("analysis", ""),
                         "comment_count": len(info.get("comments", []))
                     })
             return scored
         except json.JSONDecodeError:
-            console.print("[yellow]⚠️ LLM returned non-JSON for batch analysis.[/yellow]")
+            console.print("[yellow]⚠️ LLM returned non-JSON — skipping this group.[/yellow]")
             return []
+
+    def _write_sub_report(self, sub: str, scored: List[Dict], output_dir: Path):
+        """Writes a lightweight per-community scored .md file."""
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        filename = output_dir / f"{date_str}_{sub}_scored.md"
+        high = [s for s in scored if s["score"] >= 5]
+        lines = [
+            f"# r/{sub} — Scored Posts ({date_str})",
+            f"**Total analyzed:** {len(scored)} | **High-signal (≥5):** {len(high)}",
+            "",
+            "| Score | Post | Analysis |",
+            "|-------|------|----------|",
+        ]
+        for s in sorted(scored, key=lambda x: x["score"], reverse=True):
+            title = s["title"].replace("|", "\\|")
+            analysis = s["analysis"].replace("|", "\\|")
+            url = s.get("url", "")
+            flag = " 🔥" if s["score"] >= 7 else ""
+            lines.append(f"| **{s['score']}/10**{flag} | [{title}]({url}) | {analysis} |")
+        filename.write_text("\n".join(lines), encoding="utf-8")
+        console.print(f"[dim]  📄 Sub-report: {filename.name}[/dim]")
+
+    def _batch_analyze(self, candidates: Dict, knowledge_context: str,
+                       output_dir: Optional[Path] = None) -> List[Dict]:
+        """Groups candidates by subreddit and makes ONE LLM call per community."""
+        if not self.model:
+            return []
+
+        # Group by subreddit (fallback to 'hackernews' for HN posts)
+        by_sub: Dict[str, Dict] = {}
+        for title, info in candidates.items():
+            sub = info.get("subreddit") or "hackernews"
+            by_sub.setdefault(sub, {})[title] = info
+
+        total_groups = len(by_sub)
+        all_scored: List[Dict] = []
+
+        for i, (sub, group) in enumerate(by_sub.items(), 1):
+            est_tokens = len(group) * 100 + 250
+            console.print(
+                f"[cyan]🧠 Analyzing r/{sub} [{i}/{total_groups}] "
+                f"({len(group)} candidates, ~{est_tokens:,} tokens)...[/cyan]"
+            )
+            scored = self._analyze_group(group, knowledge_context)
+            all_scored.extend(scored)
+            high_count = sum(1 for s in scored if s["score"] >= 5)
+            console.print(f"[dim]   ✓ {len(scored)} scored, {high_count} high-signal[/dim]")
+
+            if output_dir and scored:
+                self._write_sub_report(sub, scored, output_dir)
+
+            # Polite delay between calls to avoid rate limiting
+            if i < total_groups:
+                time.sleep(1)
+
+        return all_scored
 
     def _generate_insights(self, high_signal: List[Dict], candidates: Dict, knowledge_context: str) -> str:
         """
@@ -247,10 +301,10 @@ Keep the tone sharp, confident, and data-driven. No fluff."""
         console.print("[cyan]🧠 Generating community insights summary...[/cyan]")
         return self._call_llm(prompt) or ""
 
-    def analyze_leads(self) -> List[Dict]:
+    def analyze_leads(self, output_dir: Optional[Path] = None) -> List[Dict]:
         """
-        Reads the JSON, pre-filters, then sends ONE batch call to Gemini.
-        Returns (high_signal_leads, raw_candidates) for use in report generation.
+        Reads the JSON, pre-filters, then analyzes per-subreddit in mini-batches.
+        Returns high_signal_leads (score >= 5) sorted by score desc.
         """
         if not self.json_path.exists():
             console.print(f"[bold red]❌ JSON file not found: {self.json_path}[/bold red]")
@@ -260,19 +314,28 @@ Keep the tone sharp, confident, and data-driven. No fluff."""
             data = json.load(f)
 
         knowledge_base = self._load_knowledge()
-        self._candidates = self._prefilter(data)  # Store for later use in report
+        self._candidates = self._prefilter(data)
 
         if not self._candidates:
             console.print("[yellow]⚠️ No candidates passed pre-filter.[/yellow]")
             return []
 
-        console.print(f"[cyan]🧠 Reviewer sending 1 batch call to Gemini for {len(self._candidates)} candidates...[/cyan]")
-        all_scored = self._batch_analyze(self._candidates, knowledge_base)
+        # Count unique communities for summary
+        communities = set(
+            info.get("subreddit") or "hackernews"
+            for info in self._candidates.values()
+        )
+        console.print(
+            f"[cyan]🧠 Reviewer analyzing {len(self._candidates)} candidates "
+            f"across {len(communities)} communities (1 LLM call each)...[/cyan]"
+        )
+
+        all_scored = self._batch_analyze(self._candidates, knowledge_base, output_dir)
 
         high_signal = [lead for lead in all_scored if lead["score"] >= 5]
         high_signal.sort(key=lambda x: x["score"], reverse=True)
-        
-        self._knowledge_base = knowledge_base  # Store for insights generation
+
+        self._knowledge_base = knowledge_base
         return high_signal
 
     def display_report(self, leads: List[Dict], output_path: Optional[str] = None, platform: str = "Hacker News"):

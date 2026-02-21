@@ -19,9 +19,13 @@ Monitors real-time discussions across platforms using keyword heuristics and lig
 ---
 
 ### 2. 🧠 Reviewer
-Analyzes raw scout data in a **single batched Gemini call**, scoring each post 0–10 for relevance. Then generates a **Community Intelligence Briefing** with competitive landscape analysis and the top 3 opportunities.
+Analyzes scout data **one community at a time** — one focused LLM call per subreddit (~25 posts, ~3k tokens each), instead of one giant call with all candidates. Shows live progress per community, then merges all results into a final report.
 
-**Output:** `agents/scouts/{platform}/YYYY-MM-DD_*_report.md`
+**Per community:**
+- Shows: `🧠 Analyzing r/mcp [1/11] (23 candidates, ~2,550 tokens)...`
+- Writes: `YYYY-MM-DD_{sub}_scored.md` — lightweight scored list for that community
+
+**Final output:** `agents/scouts/{platform}/YYYY-MM-DD_*_report.md`
 
 ---
 
