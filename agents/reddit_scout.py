@@ -17,7 +17,7 @@ class RedditScout:
       Phase 2: Fetch comments ONLY for posts the Reviewer marks as high-signal
     """
 
-    HEADERS = {"User-Agent": "NitroScout/1.0 (community research bot)"}
+    HEADERS = {"User-Agent": "NitroScout/1.0 (community research bot; contact: luisfelipe)"}
     REQUEST_DELAY = 1.5  # seconds between requests to be polite
 
     def __init__(self, subreddits: List[str] = None):
@@ -96,8 +96,13 @@ class RedditScout:
             params = {"limit": max_comments, "sort": "best", "raw_json": 1}
             response = requests.get(url, headers=self.HEADERS, params=params, timeout=15)
 
+            if response.status_code == 429:
+                console.print(f"[yellow]   ⏳ Reddit rate limit (429) hit for {reddit_id}. Sleeping 10s...[/yellow]")
+                time.sleep(10)
+                response = requests.get(url, headers=self.HEADERS, params=params, timeout=15)
+
             if response.status_code != 200:
-                console.print(f"[dim red]   ⚠️ Failed to fetch comments for {reddit_id}[/dim red]")
+                console.print(f"[dim red]   ⚠️ Failed to fetch comments for {reddit_id} (Status: {response.status_code})[/dim red]")
                 return []
 
             data = response.json()
@@ -134,13 +139,14 @@ class RedditScout:
         Phase 2 orchestrator: fetches comments only for high-signal leads.
         Returns the enriched JSON data dict keyed by title.
         """
+        total = len(high_signal_titles)
         enriched_count = 0
         for lead in leads:
             if lead["title"] in high_signal_titles:
-                console.print(f"   [dim]Fetching comments for: {lead['title'][:50]}...[/dim]")
-                lead["comments"] = self.fetch_comments(lead)
                 enriched_count += 1
+                console.print(f"   [dim]💬 [{enriched_count}/{total}] Fetching comments for: {lead['title'][:50]}...[/dim]")
+                lead["comments"] = self.fetch_comments(lead)
                 time.sleep(self.REQUEST_DELAY)
 
-        console.print(f"[green]✅ Enriched {enriched_count} high-signal posts with comments.[/green]")
+        console.print(f"[green]✅ Enriched {enriched_count}/{total} high-signal posts with comments.[/green]")
         return leads
