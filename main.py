@@ -91,7 +91,7 @@ async def run_hackernews(today_str: str):
 
 
 async def run_reddit(today_str: str):
-    """Runs the full Reddit scouting pipeline (two-phase)."""
+    """Runs the full Reddit scouting pipeline (two-phase, tiered subreddits)."""
     console.print(Panel("🟠 Reddit Pipeline", style="bold yellow"))
 
     reddit_scout = RedditScout(subreddits=[
@@ -181,7 +181,7 @@ async def run_reddit(today_str: str):
     if high_signal:
         high_signal_titles = {lead["title"] for lead in high_signal}
         console.print(f"[cyan]🔍 Fetching comments for {len(high_signal_titles)} high-signal posts...[/cyan]")
-        reddit_scout.enrich_leads(leads, list(high_signal_titles))
+        tier1.enrich_leads(leads, list(high_signal_titles))
 
         # Update JSON with enriched comments
         for lead in leads:
@@ -192,7 +192,7 @@ async def run_reddit(today_str: str):
         with open(json_file, "w", encoding="utf-8") as f:
             json.dump(reddit_data, f, indent=2, ensure_ascii=False)
 
-    subs = ', r/'.join(reddit_scout.subreddits)
+    subs = ', r/'.join(tier1.subreddits + tier2.subreddits)
     reviewer.display_report(high_signal, output_path=str(report_file), platform=f"Reddit r/{subs}")
     console.print(f"[cyan]🎯 Reddit High-Signal leads found: {len(high_signal)}[/cyan]")
 
