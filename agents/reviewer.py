@@ -205,10 +205,16 @@ OUTPUT: Return ONLY a valid JSON array, no markdown fences. Example:
         console.print(f"[dim]  📄 Sub-report: {filename.name}[/dim]")
 
     def _batch_analyze(self, candidates: Dict, knowledge_context: str,
-                       output_dir: Optional[Path] = None) -> List[Dict]:
-        """Groups candidates by subreddit and makes ONE LLM call per community."""
+                       output_dir: Optional[Path] = None,
+                       progress_file: Optional[Path] = None,
+                       skip_subs: Optional[set] = None) -> List[Dict]:
+        """Groups candidates by subreddit, one LLM call per community.
+        Saves a checkpoint after each community so runs can resume if keys exhaust.
+        """
         if not self.model:
             return []
+
+        skip_subs = set(skip_subs or [])
 
         # Group by subreddit (fallback to 'hackernews' for HN posts)
         by_sub: Dict[str, Dict] = {}
@@ -219,10 +225,32 @@ OUTPUT: Return ONLY a valid JSON array, no markdown fences. Example:
         total_groups = len(by_sub)
         all_scored: List[Dict] = []
 
+        # Load pre-existing results from checkpoint
+        if progress_file and progress_file.exists():
+            try:
+                chk = json.loads(progress_file.read_text(encoding="utf-8"))
+                all_scored = chk.get("results", [])
+            except Exception:
+                pass
+
         for i, (sub, group) in enumerate(by_sub.items(), 1):
+            # Skip already-completed communities (resume support)
+            if sub in skip_subs:
+                console.print(f"[dim]⏭  r/{sub} [{i}/{total_groups}] — already done (checkpoint)[/dim]")
+                continue
+
+            # All API keys exhausted — stop cleanly, surface partial results
+            if not self.model:
+                remaining = total_groups - i + 1
+                console.print(
+                    f"[bold red]⛔ API keys exhausted at r/{sub} [{i}/{total_groups}]. "
+                    f"{remaining} communities skipped. Re-run to resume from checkpoint.[/bold red]"
+                )
+                break
+
             est_tokens = len(group) * 100 + 250
             console.print(
-                f"[cyan]🧠 Analyzing r/{sub} [{i}/{total_groups}] "
+                f"[cyan]🧠 r/{sub} [{i}/{total_groups}] "
                 f"({len(group)} candidates, ~{est_tokens:,} tokens)...[/cyan]"
             )
             scored = self._analyze_group(group, knowledge_context)
@@ -233,7 +261,12 @@ OUTPUT: Return ONLY a valid JSON array, no markdown fences. Example:
             if output_dir and scored:
                 self._write_sub_report(sub, scored, output_dir)
 
-            # Polite delay between calls to avoid rate limiting
+            # Save checkpoint after every community
+            skip_subs.add(sub)
+            if progress_file:
+                chk = {"completed_subs": list(skip_subs), "results": all_scored}
+                progress_file.write_text(json.dumps(chk, indent=2, ensure_ascii=False), encoding="utf-8")
+
             if i < total_groups:
                 time.sleep(1)
 
@@ -304,6 +337,8 @@ Keep the tone sharp, confident, and data-driven. No fluff."""
     def analyze_leads(self, output_dir: Optional[Path] = None) -> List[Dict]:
         """
         Reads the JSON, pre-filters, then analyzes per-subreddit in mini-batches.
+        Supports checkpoint/resume: if a previous run was interrupted by API limits,
+        re-running picks up from the last completed community.
         Returns high_signal_leads (score >= 5) sorted by score desc.
         """
         if not self.json_path.exists():
@@ -320,7 +355,22 @@ Keep the tone sharp, confident, and data-driven. No fluff."""
             console.print("[yellow]⚠️ No candidates passed pre-filter.[/yellow]")
             return []
 
-        # Count unique communities for summary
+        # Checkpoint file lives next to the input JSON
+        today = datetime.now().strftime("%Y-%m-%d")
+        progress_file = (output_dir / f"{today}_progress.json") if output_dir else None
+        skip_subs: set = set()
+
+        if progress_file and progress_file.exists():
+            try:
+                chk = json.loads(progress_file.read_text(encoding="utf-8"))
+                skip_subs = set(chk.get("completed_subs", []))
+                console.print(
+                    f"[yellow]📂 Resuming from checkpoint — "
+                    f"{len(skip_subs)} communities already done.[/yellow]"
+                )
+            except Exception:
+                pass
+
         communities = set(
             info.get("subreddit") or "hackernews"
             for info in self._candidates.values()
@@ -330,7 +380,17 @@ Keep the tone sharp, confident, and data-driven. No fluff."""
             f"across {len(communities)} communities (1 LLM call each)...[/cyan]"
         )
 
-        all_scored = self._batch_analyze(self._candidates, knowledge_base, output_dir)
+        all_scored = self._batch_analyze(
+            self._candidates, knowledge_base, output_dir,
+            progress_file=progress_file, skip_subs=skip_subs
+        )
+
+        # Remove checkpoint if all communities completed
+        if progress_file and progress_file.exists():
+            completed = json.loads(progress_file.read_text(encoding="utf-8")).get("completed_subs", [])
+            if communities <= set(completed):
+                progress_file.unlink()
+                console.print("[dim]🗑 Checkpoint cleared — all communities complete.[/dim]")
 
         high_signal = [lead for lead in all_scored if lead["score"] >= 5]
         high_signal.sort(key=lambda x: x["score"], reverse=True)
